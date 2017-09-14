@@ -2,6 +2,9 @@
 #define MPD_HPP
 
 #include <cstdlib>
+#include <string>
+#include <fstream>
+#include <iomanip>
 
 class Mpd {
 public:
@@ -19,6 +22,7 @@ public:
     free(counts);
   }
 
+  void writeMpd(std::string file);
 };
 
 #endif /* MPD_HPP */
