@@ -1,7 +1,7 @@
 #include "map.hpp"
 
 
-Map::Map(std::string id){
+Map::Map(std::string id,double Rein){
   this->id = id;
   this->convolved = false;
   std::string file;
@@ -17,7 +17,7 @@ Map::Map(std::string id){
   myfile.close();
   this->Ny = this->Nx;
   this->height = this->width;
-  this->pixSizeRein = this->width/this->Nx;
+  this->pixSizePhys = Rein*this->width/this->Nx; // in units of [10^14 cm]
 
 
   // Read map data
@@ -30,10 +30,10 @@ Map::Map(std::string id){
   
   //int (4 bytes) and cufftDoubleReal (8 bytes) do not have the same size, so there has to be a type cast
   double factor = fabs(this->avgmu/this->avgN);
-  double muth   = fabs( 1.0/(1.0-pow(this->k,2)-pow(this->g,2)) );
+  double muth   = fabs( 1.0/(pow(1.0-this->k,2)-pow(this->g,2)) );
   this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
   for(long i=0;i<this->Nx*this->Ny;i++){
-    this->data[i] = (double) imap[i]*factor/muth;
+    this->data[i] = (double) (imap[i]*factor/muth);
   }
   free(imap);
 }
@@ -50,7 +50,6 @@ Map::Map(const Map& other){
   this->height = other.height;
   this->avgmu  = other.avgmu;
   this->avgN   = other.avgN;
-  this->pixSizeRein = other.pixSizeRein;
   this->pixSizePhys = other.pixSizePhys; // in units of [10^14 cm]
   this->convolved   = other.convolved;
 
@@ -61,7 +60,7 @@ Map::Map(const Map& other){
 }
 
 
-void Map::convolve(Profile* profile){
+void Map::convolve(double* kernel){
   cufftDoubleReal dum1,dum2;
   
   // Check if "kernel", which is a "profile" variable has the same dimension as the map
@@ -71,7 +70,7 @@ void Map::convolve(Profile* profile){
   myfft2d_r2c(this->Nx,this->Ny,this->data,Fmap);
   //Fourier transform kernel
   cufftDoubleComplex* Fkernel = (cufftDoubleComplex*) calloc(this->Nx*(this->Ny/2+1),sizeof(cufftDoubleComplex));
-  myfft2d_r2c(this->Nx,this->Ny,profile->kernel,Fkernel);
+  myfft2d_r2c(this->Nx,this->Ny,kernel,Fkernel);
   //Multiply kernel and map
   for(long i=0;i<this->Nx*(this->Ny/2+1);i++){
     dum1 = (cufftDoubleReal) (Fmap[i].x*Fkernel[i].x - Fmap[i].y*Fkernel[i].y);
@@ -89,7 +88,7 @@ void Map::convolve(Profile* profile){
 
 
   //Normalize convolved map
-  double norm = (double) this->Nx*this->Ny;
+  double norm = (double) (this->Nx*this->Ny);
   for(int i=0;i<this->Ny;i++){
     for(int j=0;j<this->Nx;j++){
       this->data[i*this->Nx+j] /= norm;
@@ -102,24 +101,28 @@ void Map::convolve(Profile* profile){
 
 Mpd* Map::getFullMpd(){
   if( this->convolved ){
-    std::cout << "Map is convolved. Has to be in ray counts." << std::endl;
+    std::cout << "Map is convolved. It has to be in ray counts in order to use this function." << std::endl;
     return NULL;
   } else {
+    double muth   = fabs(1.0/(pow(1.0-this->k,2)-pow(this->g,2)));
+
     thrust::device_vector<double> bins;
     thrust::device_vector<int> counts;
     thrust::device_vector<double> data(this->data,this->data+this->Nx*this->Ny);
     thrust::sort(data.begin(),data.end());
+    
     int num_bins = thrust::inner_product(data.begin(),data.end()-1,data.begin()+1,int(1),thrust::plus<int>(),thrust::not_equal_to<double>());
     counts.resize(num_bins);
     bins.resize(num_bins);
-    thrust::reduce_by_key(data.begin(),data.end(),thrust::constant_iterator<int>(1),counts.begin(),bins.begin());
+    thrust::reduce_by_key(data.begin(),data.end(),thrust::constant_iterator<int>(1),bins.begin(),counts.begin());
     thrust::host_vector<int> hcounts(counts);
     thrust::host_vector<double> hbins(bins);
     
     Mpd* theMpd = new Mpd(hcounts.size());
     for(unsigned int i=0;i<hcounts.size();i++){
-      theMpd->counts[i] = (double) hcounts[i]/(this->Nx*this->Ny);
-      theMpd->bins[i]   = (double) hbins[i];
+      theMpd->counts[i] = (double) (hcounts[i])/(double) (this->Nx*this->Ny);
+      theMpd->bins[i]   = ((double) (hbins[i]));
+      //      theMpd->bins[i]   = ((double) (hbins[i]))*muth;
     }
     return theMpd; 
   }
@@ -146,8 +149,8 @@ Mpd* Map::getBinnedMpd(int Nbins){
 
   Mpd* theMpd = new Mpd(hcounts.size());
   for(unsigned int i=0;i<hcounts.size();i++){
-    theMpd->counts[i] = (double) hcounts[i]/(this->Nx*this->Ny);
-    theMpd->bins[i]   = (double) bins[i];
+    theMpd->counts[i] = (double) (hcounts[i]/(this->Nx*this->Ny));
+    theMpd->bins[i]   = (double) (bins[i]);
   }
   return theMpd;
 }
@@ -206,38 +209,42 @@ int Map::myfft2d_c2r(int Nx, int Ny, cufftDoubleComplex* Fdata, cufftDoubleReal*
 
 
 void Map::writeMapPNG(const std::string filename,int sampling){
-
   // read, sample, and scale map
-  long Ntot = this->Nx*this->Ny/pow(sampling,2);
-  int* colors = (int*) calloc(Ntot,sizeof(int));
-  this->scaleMap(Ntot,colors,sampling);
+  int nNx = (int) (this->Nx/sampling);
+  int nNy = (int) (this->Ny/sampling);
+  int* colors = (int*) calloc(nNx*nNy,sizeof(int));
+  this->scaleMap(colors,sampling);
   
   // read rgb values from table file (or select them from a stored list of rgb color tables)
   int* rgb = (int*) calloc(3*256,sizeof(int));
   readRGB("rgb.dat",rgb);
 
   // write image
-  writeImage(filename,this->Nx/sampling,this->Ny/sampling,colors,rgb);
+  writeImage(filename,nNx,nNy,colors,rgb);
 }
 
 
-void Map::scaleMap(int Ntot,int* colors,int sampling){
+void Map::scaleMap(int* colors,int sampling){
   double scale_max = 1.6;
   double scale_min = -1.6;
   double scale_fac = 255/(fabs(scale_min) + scale_max);
   double dum,dum2;
 
-  for(long i=0;i<this->Nx*this->Ny;i+=sampling){
-    dum = log10(this->data[i]);
-    if( dum < scale_min ){
-      dum = scale_min;
+  long count = 0;
+  for(int i=0;i<this->Ny;i+=sampling){
+    for(int j=0;j<this->Nx;j+=sampling){
+      dum = log10(this->data[i*this->Nx+j]);
+      if( dum < scale_min ){
+	dum = scale_min;
+      }
+      if( dum > scale_max ){
+	dum = scale_max;
+      }
+      
+      dum2 = (dum + fabs(scale_min))*scale_fac;
+      colors[count] = (int) round(dum2);
+      count++;
     }
-    if( dum > scale_max ){
-      dum = scale_max;
-    }
-    
-    dum2 = (dum + fabs(scale_min))*scale_fac;
-    colors[i] = (int) round(dum2);
   }
 }
 
@@ -255,8 +262,8 @@ void Map::readRGB(const std::string filename,int* rgb){
 }
 
 
-void Map::writeImage(const std::string fname, int width,int height,int* colors,int* rgb){
-  FILE* fp            = fopen(fname.data(), "wb");
+void Map::writeImage(const std::string filename, int width,int height,int* colors,int* rgb){
+  FILE* fp            = fopen(filename.data(), "wb");
   png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
   png_infop info_ptr  = png_create_info_struct(png_ptr);
   

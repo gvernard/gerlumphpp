@@ -22,7 +22,7 @@ public:
     free(counts);
   }
 
-  void writeMpd(std::string file);
+  void writeMpd(const std::string file);
 };
 
 #endif /* MPD_HPP */
