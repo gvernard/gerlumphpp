@@ -1,7 +1,7 @@
-#include "map.hpp"
+#include "magnification_map.hpp"
 
 
-Map::Map(std::string id,double Rein){
+MagnificationMap::MagnificationMap(std::string id,double Rein){
   this->id = id;
   this->convolved = false;
   std::string file;
@@ -39,7 +39,7 @@ Map::Map(std::string id,double Rein){
 }
 
 
-Map::Map(const Map& other){
+MagnificationMap::MagnificationMap(const MagnificationMap& other){
   this->id     = other.id;
   this->k      = other.k;
   this->g      = other.g;
@@ -60,7 +60,7 @@ Map::Map(const Map& other){
 }
 
 
-void Map::convolve(double* kernel){
+void MagnificationMap::convolve(Kernel* kernel,EffectiveMap* emap){
   cufftDoubleReal dum1,dum2;
   
   // Check if "kernel", which is a "profile" variable has the same dimension as the map
@@ -70,7 +70,7 @@ void Map::convolve(double* kernel){
   myfft2d_r2c(this->Nx,this->Ny,this->data,Fmap);
   //Fourier transform kernel
   cufftDoubleComplex* Fkernel = (cufftDoubleComplex*) calloc(this->Nx*(this->Ny/2+1),sizeof(cufftDoubleComplex));
-  myfft2d_r2c(this->Nx,this->Ny,kernel,Fkernel);
+  myfft2d_r2c(this->Nx,this->Ny,kernel->data,Fkernel);
   //Multiply kernel and map
   for(long i=0;i<this->Nx*(this->Ny/2+1);i++){
     dum1 = (cufftDoubleReal) (Fmap[i].x*Fkernel[i].x - Fmap[i].y*Fkernel[i].y);
@@ -79,35 +79,34 @@ void Map::convolve(double* kernel){
     Fmap[i].y = dum2;
   }
   //Inverse Fourier transform
-  //  cmap = (cufftDoubleReal*) calloc(this->res*this->res,sizeof(cufftDoubleReal));
-  //  myfft2d_c2r(this->res,this->res,Fmap,cmap);
-  myfft2d_c2r(this->Nx,this->Ny,Fmap,this->data);
+  cufftDoubleReal* cmap = (cufftDoubleReal*) calloc(this->Nx*this->Ny,sizeof(cufftDoubleReal));
+  myfft2d_c2r(this->Nx,this->Ny,Fmap,cmap);
 
   free(Fmap);
   free(Fkernel);
 
-
-  //Normalize convolved map
+  //Normalize convolved map and crop to emap
   double norm = (double) (this->Nx*this->Ny);
-  for(int i=0;i<this->Ny;i++){
-    for(int j=0;j<this->Nx;j++){
-      this->data[i*this->Nx+j] /= norm;
+  for(int i=0;i<emap->Ny;i++){
+    for(int j=0;j<emap->Nx;j++){
+      emap->data[i*emap->Nx+j] = (double) (cmap[emap->top*this->Nx+emap->left+i*this->Nx+j]/norm);
     }
   }
 
   this->convolved = true;
+  free(cmap);
 }
 
 
-Mpd* Map::getFullMpd(){
+Mpd MagnificationMap::getFullMpd(){
   if( this->convolved ){
     std::cout << "Map is convolved. It has to be in ray counts in order to use this function." << std::endl;
-    return NULL;
+    throw "This is an exception!";
   } else {
     double muth   = fabs(1.0/(pow(1.0-this->k,2)-pow(this->g,2)));
 
-    thrust::device_vector<double> bins;
     thrust::device_vector<int> counts;
+    thrust::device_vector<double> bins;
     thrust::device_vector<double> data(this->data,this->data+this->Nx*this->Ny);
     thrust::sort(data.begin(),data.end());
     
@@ -118,45 +117,62 @@ Mpd* Map::getFullMpd(){
     thrust::host_vector<int> hcounts(counts);
     thrust::host_vector<double> hbins(bins);
     
-    Mpd* theMpd = new Mpd(hcounts.size());
+    Mpd theMpd(hcounts.size());
     for(unsigned int i=0;i<hcounts.size();i++){
-      theMpd->counts[i] = (double) (hcounts[i])/(double) (this->Nx*this->Ny);
-      theMpd->bins[i]   = ((double) (hbins[i]));
-      //      theMpd->bins[i]   = ((double) (hbins[i]))*muth;
+      theMpd.counts[i] = (double) (hcounts[i])/(double) (this->Nx*this->Ny);
+      theMpd.bins[i]   = ((double) (hbins[i]));
     }
     return theMpd; 
   }
 }
 
 
-Mpd* Map::getBinnedMpd(int Nbins){
+Mpd MagnificationMap::getBinnedMpd(int Nbins){
   // creating bins which are evenly spaced in log space
-  double logmin  = log10(0.02);
-  double logmax  = log10(200);
+  double min = 0.02;
+  double max = 200;
+
+
+  double logmin  = log10(min);
+  double logmax  = log10(max);
   double logdbin = (logmax-logmin)/Nbins;
   double* bins   = (double*) calloc(Nbins,sizeof(double));
   for(int i=0;i<Nbins;i++){
     bins[i] = pow(10,logmin+(i+1)*logdbin);
   }
 
-  thrust::device_vector<int> counts(Nbins);
+  thrust::device_vector<int>    counts(Nbins);
   thrust::device_vector<double> dbins(bins,bins+Nbins);
   thrust::device_vector<double> data(this->data,this->data+this->Nx*this->Ny);
   thrust::sort(data.begin(),data.end());
-  thrust::upper_bound(data.begin(),data.end(),dbins.begin(),dbins.end(),counts.begin());
-  thrust::adjacent_difference(counts.begin(),counts.end(),counts.begin());
-  thrust::host_vector<int> hcounts(counts);
 
-  Mpd* theMpd = new Mpd(hcounts.size());
+  // For the following lines to work I need to compile using the flag: --expt-extended-lambda
+  //  auto getLog10LambdaFunctor = [=]  __device__ (double x) {return log10(x);};
+  //  thrust::transform(data.begin(),data.end(),data.begin(),getLog10LambdaFunctor);
+
+  double range[2] = {min,max};
+  thrust::device_vector<double> drange(range,range+2);
+  thrust::device_vector<int>    dirange(2);
+  thrust::lower_bound(data.begin(),data.end(),drange.begin(),drange.end(),dirange.begin());
+  thrust::host_vector<int> hirange(dirange);
+  //  std::cout << hirange[0] << " " << hirange[1] << std::endl;
+
+  thrust::upper_bound(data.begin() + hirange[0],data.begin() + hirange[1],dbins.begin(),dbins.end(),counts.begin());
+  //  thrust::upper_bound(data.begin(),data.end(),dbins.begin(),dbins.end(),counts.begin());
+  thrust::adjacent_difference(counts.begin(),counts.end(),counts.begin());
+  thrust::host_vector<int>    hcounts(counts);
+
+  Mpd theMpd(hcounts.size());
   for(unsigned int i=0;i<hcounts.size();i++){
-    theMpd->counts[i] = (double) (hcounts[i]/(this->Nx*this->Ny));
-    theMpd->bins[i]   = (double) (bins[i]);
+    theMpd.counts[i] = (double) (hcounts[i]) /(double) (this->Nx*this->Ny);
+    theMpd.bins[i]   = (double) bins[i];
   }
+  free(bins);
   return theMpd;
 }
 
 
-int Map::myfft2d_r2c(int Nx,int Ny,cufftDoubleReal* data,cufftDoubleComplex* Fdata){
+int MagnificationMap::myfft2d_r2c(int Nx,int Ny,cufftDoubleReal* data,cufftDoubleComplex* Fdata){
   cufftHandle plan;
   cufftDoubleReal* data_GPU;
   cufftDoubleComplex* Fdata_GPU;
@@ -182,7 +198,7 @@ int Map::myfft2d_r2c(int Nx,int Ny,cufftDoubleReal* data,cufftDoubleComplex* Fda
 }
 
 
-int Map::myfft2d_c2r(int Nx, int Ny, cufftDoubleComplex* Fdata, cufftDoubleReal* data){
+int MagnificationMap::myfft2d_c2r(int Nx, int Ny, cufftDoubleComplex* Fdata, cufftDoubleReal* data){
   cufftHandle plan;
   cufftDoubleComplex* Fdata_GPU;
   cufftDoubleReal* data_GPU;
@@ -208,7 +224,7 @@ int Map::myfft2d_c2r(int Nx, int Ny, cufftDoubleComplex* Fdata, cufftDoubleReal*
 }
 
 
-void Map::writeMapPNG(const std::string filename,int sampling){
+void MagnificationMap::writeMapPNG(const std::string filename,int sampling){
   // read, sample, and scale map
   int nNx = (int) (this->Nx/sampling);
   int nNy = (int) (this->Ny/sampling);
@@ -221,10 +237,13 @@ void Map::writeMapPNG(const std::string filename,int sampling){
 
   // write image
   writeImage(filename,nNx,nNy,colors,rgb);
+
+  free(colors);
+  free(rgb);
 }
 
 
-void Map::scaleMap(int* colors,int sampling){
+void MagnificationMap::scaleMap(int* colors,int sampling){
   double scale_max = 1.6;
   double scale_min = -1.6;
   double scale_fac = 255/(fabs(scale_min) + scale_max);
@@ -249,7 +268,7 @@ void Map::scaleMap(int* colors,int sampling){
 }
 
 
-void Map::readRGB(const std::string filename,int* rgb){
+void MagnificationMap::readRGB(const std::string filename,int* rgb){
   int r,g,b;
   std::ifstream istr(filename);
   
@@ -262,7 +281,7 @@ void Map::readRGB(const std::string filename,int* rgb){
 }
 
 
-void Map::writeImage(const std::string filename, int width,int height,int* colors,int* rgb){
+void MagnificationMap::writeImage(const std::string filename, int width,int height,int* colors,int* rgb){
   FILE* fp            = fopen(filename.data(), "wb");
   png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
   png_infop info_ptr  = png_create_info_struct(png_ptr);
@@ -288,8 +307,56 @@ void Map::writeImage(const std::string filename, int width,int height,int* color
   
   
   fclose(fp);
-  png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+  png_free_data(png_ptr,info_ptr,PNG_FREE_ALL,-1);
   png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
   free(row);
 }
 
+
+
+
+
+
+EffectiveMap::EffectiveMap(int offset,MagnificationMap* map){
+  this->top    = offset;
+  this->bottom = offset;
+  this->left   = offset;
+  this->right  = offset;
+
+  this->pixSizePhys = map->pixSizePhys;
+  this->Nx = map->Nx - 2*offset;
+  this->Ny = map->Ny - 2*offset;
+  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width = map->width*this->Nx/map->Nx;
+  this->height = map->height*this->Ny/map->Ny;
+
+  this->k = map->k;
+  this->g = map->g;
+  this->s = map->s;
+  this->avgmu = map->avgmu;
+  this->avgN = map->avgN;
+
+  this->convolved = true;
+}
+
+EffectiveMap::EffectiveMap(int top,int bottom,int left,int right,MagnificationMap* map){
+  this->top    = top;
+  this->bottom = bottom;
+  this->left   = left;
+  this->right  = right;
+
+  this->pixSizePhys = map->pixSizePhys;
+  this->Nx = map->Nx - left - right;
+  this->Ny = map->Ny - top - bottom;
+  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width = map->width*this->Nx/map->Nx;
+  this->height = map->height*this->Ny/map->Ny;
+
+  this->k = map->k;
+  this->g = map->g;
+  this->s = map->s;
+  this->avgmu = map->avgmu;
+  this->avgN = map->avgN;
+
+  this->convolved = true;
+}

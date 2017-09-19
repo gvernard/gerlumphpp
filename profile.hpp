@@ -3,7 +3,7 @@
 
 #include <string>
 #include <math.h>
-
+#include <iostream>
 
 class Profile {
 public:
@@ -21,7 +21,6 @@ public:
 
   void readProfile(const std::string filename);
   void createGaussian(double gauss_width,double gauss_height,double incl,double orient);
-  double* setKernel(int map_Nx,int map_Ny);
 
 
 private:

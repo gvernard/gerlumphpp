@@ -1,5 +1,5 @@
-#ifndef MAP_HPP
-#define MAP_HPP
+#ifndef MAGNIFICATION_MAP_HPP
+#define MAGNIFICATION_MAP_HPP
 
 #include <cstdlib>
 #include <string>
@@ -25,12 +25,11 @@
 
 #include "mpd.hpp"
 #include "profile.hpp"
+#include "kernel.hpp"
 
+class EffectiveMap;
 
-class LightCurve;
-
-
-class Map {
+class MagnificationMap {
 public:
   std::string id;
   int Nx;
@@ -46,16 +45,16 @@ public:
   bool convolved;
   double* data;
 
-  Map(){};
-  Map(std::string id,double Rein);
-  Map(const Map& other);
-  ~Map(){
+  MagnificationMap(){};
+  MagnificationMap(std::string id,double Rein);
+  MagnificationMap(const MagnificationMap& other);
+  ~MagnificationMap(){
     free(data);
   };
 
-  Mpd* getFullMpd();
-  Mpd* getBinnedMpd(int Nbins);
-  void convolve(double* kernel);
+  Mpd getFullMpd();
+  Mpd getBinnedMpd(int Nbins);
+  void convolve(Kernel* kernel,EffectiveMap* emap);
   void writeMapPNG(const std::string filename,int sampling);
 
 
@@ -74,4 +73,16 @@ private:
 };
 
 
-#endif /* MAP_HPP */
+class EffectiveMap : public MagnificationMap {
+public:
+  int top;    // top margin in pixels
+  int bottom; // bottom margin in pixels
+  int left;   // left margin in pixels
+  int right;  // right margin in pixels
+
+
+  EffectiveMap(int offset,MagnificationMap* map);
+  EffectiveMap(int top,int bottom,int left,int right,MagnificationMap* map);
+};
+
+#endif /* MAGNIFICATION_MAP_HPP */

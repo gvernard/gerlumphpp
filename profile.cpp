@@ -67,17 +67,4 @@ void Profile::normalize(){
 }
 
 
-double* Profile::setKernel(int map_Nx,int map_Ny){
-  double* kernel = (double*) calloc(map_Nx*map_Ny,sizeof(double));
-  
-  for(int j=0;j<this->Ny;j++){
-    for(int i=0;i<this->Nx;i++){
-      kernel[j*map_Nx+i]                                              = this->data[(this->Ny/2)*this->Nx+this->Nx/2+j*this->Nx+i];
-      kernel[map_Nx-this->Nx/2+j*map_Nx+i]                            = this->data[(this->Ny/2)*this->Nx+j*this->Nx+i];
-      kernel[map_Nx*(map_Ny-this->Ny/2)+j*map_Nx+i]                   = this->data[this->Nx/2+this->Nx*j+i];
-      kernel[map_Nx*(map_Ny-this->Ny/2)+map_Nx-this->Nx/2+j*map_Nx+i] = this->data[this->Nx*j+i];
-    }
-  }
 
-  return kernel;
-}
