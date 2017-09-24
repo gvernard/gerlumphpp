@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <string>
+#include <vector>
 
 #include "magnification_map.hpp"
 
@@ -12,14 +13,10 @@ public:
   double* m;
   double* dm;
 
+  void writeData(const std::string filename);
   // some functions doing statistics with light curves
 };
 
-
-struct point {
-  double x;
-  double y;
-};
 
 class LightCurveCollection {
 public:
@@ -30,6 +27,7 @@ public:
   double pixSizePhys;
   int Nx; // width of the effective map from which the light curves will be exracted
   int Ny; // height of the effective map from which the light curves will be exracted
+  EffectiveMap* emap;
 
   LightCurveCollection(int Ncurves,EffectiveMap* emap);
   LightCurveCollection(const LightCurveCollection& other);
@@ -44,17 +42,26 @@ public:
     free(B);
   }
 
+  void setEmap(EffectiveMap* emap);
   void createRandomLocations(int seed,int maxLen);
+
+  std::vector<int> checkLengthFull();
+  std::vector<int> checkLength(double v,double tmax);
+  std::vector<int> checkSampling(double v,double dt);
+  std::vector<int> checkSampling(double v,std::vector<double> t);
+
+  void extractFull();
+  void extractSampled(double v,double dt,double tmax);
+  void extractStrategy(double v,std::vector<double> t);
+
   void writeLocations(const std::string filename);
+  void writeCurves(const std::string prefix);
 
-  void extractFull(EffectiveMap* emap){};
-  void extractSampled(EffectiveMap* emap,double v,double dt,double tmax){};
-  void extractStrategy(EffectiveMap* emap,double v,double* t){};
+private:
+  const double factor = 8.64*1.e-5; // conversion from [day*km/s] to [pixels]
+  void sampleLightCurve(int index,std::vector<double> length,double phi);
+  void interpolatePlane(double xk,double yk,double& m,double& dm);
 
-
-  // sample light curves fully
-  // sample light curves according to velocity of the source
-  // sample light curves according to observing strategy
-
-
+  const int full_sampling_lower_limit = 10;
+  const int sampling_lower_limit = 3;  
 };

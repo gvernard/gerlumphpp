@@ -1,6 +1,5 @@
 #include "light_curve.hpp"
 
-
 LightCurveCollection::LightCurveCollection(int Ncurves,EffectiveMap* emap){
   this->Ncurves = Ncurves;
   this->A = (point*) calloc(Ncurves,sizeof(point));
@@ -9,6 +8,7 @@ LightCurveCollection::LightCurveCollection(int Ncurves,EffectiveMap* emap){
   this->pixSizePhys = emap->pixSizePhys;
   this->Nx = emap->Nx;
   this->Ny = emap->Ny;
+  this->emap = emap;
 }
 
 LightCurveCollection::LightCurveCollection(const LightCurveCollection& other){
@@ -22,7 +22,14 @@ LightCurveCollection::LightCurveCollection(const LightCurveCollection& other){
   }
   
   this->lightCurves = (LightCurve*) calloc(other.Ncurves,sizeof(LightCurve));
-  this->pixSizePhys = pixSizePhys;
+  this->pixSizePhys = other.pixSizePhys;
+  this->Nx = other.Nx;
+  this->Ny = other.Ny;
+  this->emap = other.emap;
+}
+
+void LightCurveCollection::setEmap(EffectiveMap* emap){
+  this->emap = emap;
 }
 
 void LightCurveCollection::createRandomLocations(int seed,int maxLen){
@@ -67,3 +74,203 @@ void LightCurveCollection::writeLocations(const std::string filename){
   fclose(fh);
 }
 
+std::vector<int> LightCurveCollection::checkLengthFull(){
+  // all comparisons are made in pixels and the index of problematic light curves is returned
+  std::vector<int> indices;
+  for(int i=0;i<this->Ncurves;i++){
+    int Dj = floor(this->B[i].x - this->A[i].x);
+    int Di = floor(this->B[i].y - this->A[i].y);
+    int Lmax = floor(hypot(Di,Dj));
+    if( Lmax < this->full_sampling_lower_limit ){
+      indices.push_back(i);
+    }
+  }
+  return indices;
+}
+
+std::vector<int> LightCurveCollection::checkLength(double v,double tmax){
+  // all comparisons are made in pixels and the index of problematic light curves is returned
+  std::vector<int> indices;
+  int lmax = floor(v*tmax*this->factor/this->pixSizePhys);
+  for(int i=0;i<this->Ncurves;i++){
+    int Dj = floor(this->B[i].x - this->A[i].x);
+    int Di = floor(this->B[i].y - this->A[i].y);
+    int Lmax = floor(hypot(Di,Dj));
+    if( lmax >= Lmax ){
+      indices.push_back(i);
+    }
+  }
+  return indices;
+}
+
+std::vector<int> LightCurveCollection::checkSampling(double v,double dt){
+  std::vector<int> indices;
+  double dl = v*dt*this->factor/this->pixSizePhys;
+  for(int i=0;i<this->Ncurves;i++){
+    int Dj = floor(this->B[i].x - this->A[i].x);
+    int Di = floor(this->B[i].y - this->A[i].y);
+    int Lmax = floor(hypot(Di,Dj));
+    if( Lmax/dl < this->sampling_lower_limit ){
+      indices.push_back(i);
+    }
+  }
+  return indices;
+}
+
+std::vector<int> LightCurveCollection::checkSampling(double v,std::vector<double> t){
+  std::vector<int> indices;
+  for(int i=0;i<this->Ncurves;i++){
+    int Dj = floor(this->B[i].x - this->A[i].x);
+    int Di = floor(this->B[i].y - this->A[i].y);
+    int Lmax = floor(hypot(Di,Dj));
+
+    int j=0;
+    for(j=0;j<t.size();j++){
+      double lj = v*t[j]*this->factor/this->pixSizePhys;
+      if( lj > Lmax ){
+	break;
+      }
+    }
+    if( j < this->sampling_lower_limit ){
+      indices.push_back(i);
+    }
+  }
+  return indices;
+}
+
+
+
+void LightCurveCollection::extractFull(){
+  for(int i=0;i<this->Ncurves;i++){
+    int Dj   = floor(this->B[i].x - this->A[i].x);
+    int Di   = floor(this->B[i].y - this->A[i].y);
+    int Lmax = floor(hypot(Di,Dj));
+    int dl   = 1;
+    int Nsamples = Lmax;
+    double phi = atan2(Di,Dj);
+
+    this->lightCurves[i].Nsamples = Nsamples;
+    this->lightCurves[i].t  = (double*) calloc(Nsamples,sizeof(double));
+    this->lightCurves[i].m  = (double*) calloc(Nsamples,sizeof(double));
+    this->lightCurves[i].dm = (double*) calloc(Nsamples,sizeof(double));
+
+    std::vector<double> length(Nsamples); // in pixels (but can be decimal number as well)
+    for(int k=0;k<Nsamples;k++){
+      length[k] = k;
+      this->lightCurves[i].t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
+    }
+
+    sampleLightCurve(i,length,phi);
+  }
+}
+
+void LightCurveCollection::extractSampled(double v,double dt,double tmax){
+  for(int i=0;i<this->Ncurves;i++){
+    int Dj   = floor(this->B[i].x - this->A[i].x);
+    int Di   = floor(this->B[i].y - this->A[i].y);
+    int Lmax = floor(hypot(Di,Dj));
+    int dl   = v*dt*this->factor/this->pixSizePhys;
+    int Nsamples = floor(Lmax/dl);
+    double phi = atan2(Di,Dj);
+
+    this->lightCurves[i].Nsamples = Nsamples;
+    this->lightCurves[i].t  = (double*) calloc(Nsamples,sizeof(double));
+    this->lightCurves[i].m  = (double*) calloc(Nsamples,sizeof(double));
+    this->lightCurves[i].dm = (double*) calloc(Nsamples,sizeof(double));
+
+    std::vector<double> length(Nsamples); // in pixels (but can be decimal number as well)
+    for(int k=0;k<Nsamples;k++){
+      length[k] = k*dl;
+      this->lightCurves[i].t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
+    }
+
+    sampleLightCurve(i,length,phi);
+  }
+}
+
+void LightCurveCollection::extractStrategy(double v,std::vector<double> t){
+  for(int i=0;i<this->Ncurves;i++){
+    int Dj   = floor(this->B[i].x - this->A[i].x);
+    int Di   = floor(this->B[i].y - this->A[i].y);
+    int Lmax = floor(hypot(Di,Dj));
+    double phi = atan2(Di,Dj);
+
+    std::vector<double> length; 
+    for(int j=0;j<t.size();j++){
+      double len = v*t[j]*this->factor/this->pixSizePhys;
+      if( len <= Lmax ){
+	length.push_back(len);
+      } else {
+	break;
+      }
+    }
+    int Nsamples = length.size();
+
+    this->lightCurves[i].Nsamples = Nsamples;
+    this->lightCurves[i].t  = (double*) calloc(Nsamples,sizeof(double));
+    this->lightCurves[i].m  = (double*) calloc(Nsamples,sizeof(double));
+    this->lightCurves[i].dm = (double*) calloc(Nsamples,sizeof(double));
+
+    for(int k=0;k<Nsamples;k++){
+      this->lightCurves[i].t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
+    }
+
+    sampleLightCurve(i,length,phi);
+  }
+}
+
+void LightCurveCollection::sampleLightCurve(int index,std::vector<double> length,double phi){
+  double m,dm;
+  int Nsamples = length.size();
+
+  for(int k=0;k<Nsamples;k++){
+    double xk = this->A[index].x + length[k]*cos(phi);
+    double yk = this->A[index].y + length[k]*sin(phi);
+  
+    interpolatePlane(xk,yk,m,dm);
+    
+    this->lightCurves[index].m[k]  = m;
+    this->lightCurves[index].dm[k] = dm;
+  }
+}
+
+void LightCurveCollection::interpolatePlane(double xk,double yk,double& m,double& dm){
+  int j0 = floor(xk);
+  int i0 = floor(yk);
+
+  double dx  = (double) fabs(j0 - xk);
+  double dy  = (double) fabs(i0 - yk);
+  double ddx = (double) (1.0 - dx);
+  double ddy = (double) (1.0 - dy);
+  double w00 = dx*dy;
+  double w10 = dy*ddx;
+  double w01 = dx*ddy;
+  double w11 = ddx*ddy;
+
+  double f00 = this->emap->data[i0*this->emap->Nx+j0];
+  double f10 = this->emap->data[i0*this->emap->Nx+j0+1];
+  double f01 = this->emap->data[(i0+1)*this->emap->Nx+j0];
+  double f11 = this->emap->data[(i0+1)*this->emap->Nx+j0+1];
+  m = f00*w00 + f10*w10 + f01*w01 + f11*w11;
+
+  double df00 = sqrt(f00*fabs(this->emap->avgmu/this->emap->avgN));
+  double df10 = sqrt(f10*fabs(this->emap->avgmu/this->emap->avgN));
+  double df01 = sqrt(f01*fabs(this->emap->avgmu/this->emap->avgN));
+  double df11 = sqrt(f11*fabs(this->emap->avgmu/this->emap->avgN));
+  dm = df00*w00 + df10*w10 + df01*w01 + df11*w11;
+}
+
+void LightCurveCollection::writeCurves(const std::string prefix){
+  for(int i=0;i<this->Ncurves;i++){
+    std::string fname = prefix + std::to_string(i) + ".dat";
+    this->lightCurves[i].writeData(fname);
+  }
+}
+
+void LightCurve::writeData(const std::string filename){
+  FILE* fh = fopen(filename.data(),"w");
+  for(int i=0;i<this->Nsamples;i++){
+    fprintf(fh,"%11.6e %11.6e %11.6e\n",this->t[i],this->m[i],this->dm[i]);
+  }
+  fclose(fh);
+}

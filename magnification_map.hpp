@@ -6,7 +6,6 @@
 #include <fstream>
 #include <stdio.h>
 #include <iostream>
-#include <fstream>
 #include <iterator>
 
 #include <thrust/device_vector.h>
@@ -21,19 +20,23 @@
 #include <thrust/iterator/counting_iterator.h>
 
 #include <cufft.h>
-#include <png.h>
 
+#include "image.hpp"
 #include "mpd.hpp"
 #include "profile.hpp"
 #include "kernel.hpp"
 
 class EffectiveMap;
 
-class MagnificationMap {
+struct point {
+  // required in light_curve.hpp and fixed_locs.hpp where this file is included as a header
+  double x;
+  double y;
+};
+
+class MagnificationMap : public Image {
 public:
   std::string id;
-  int Nx;
-  int Ny;
   double k;
   double g;
   double s;
@@ -43,7 +46,6 @@ public:
   double avgN;
   double pixSizePhys; // in units of [10^14 cm]
   bool convolved;
-  double* data;
 
   MagnificationMap(){};
   MagnificationMap(std::string id,double Rein);
