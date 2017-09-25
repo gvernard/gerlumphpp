@@ -1,3 +1,6 @@
+#ifndef FIXED_LOCS_HPP
+#define FIXED_LOCS_HPP
+
 #include <cstdlib>
 
 #include "magnification_map.hpp"
@@ -28,3 +31,5 @@ public:
   void writeLocations(const std::string filename);
   void writeData(const std::string filename);
 };
+
+#endif /* FIXED_LOCS_HPP */

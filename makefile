@@ -1,42 +1,43 @@
-CUDA   = nvcc
+CUDA  = nvcc
 FLAGS = -std=c++11
+LIBS  = -lcufft -lpng -lCCfits -lgerlumph
+INC   = -I include
 
-ODIR = obj
-LIBS = -lcufft -lpng -lCCfits
-DEPS        = magnification_map.hpp mpd.hpp profile.hpp kernel.hpp light_curve.hpp fixed_locs.hpp image.hpp
-
-OBJ_MAIN    = magnification_map.o   mpd.o   profile.o   kernel.o   light_curve.o   fixed_locs.o   image.o   main.o
-OBJ_CREATE  = magnification_map.o   mpd.o   profile.o   kernel.o   light_curve.o   fixed_locs.o   image.o   create_profile.o
-OBJ_READ    = magnification_map.o   mpd.o   profile.o   kernel.o   light_curve.o   fixed_locs.o   image.o   read_profile.o
-OBJ_COMPARE = magnification_map.o   mpd.o   profile.o   kernel.o   light_curve.o   fixed_locs.o   image.o   compare_profiles.o
-
-#Pad object names with object dir
-_OBJ_MAIN    = $(patsubst %,$(ODIR)/%,$(OBJ_MAIN))
-_OBJ_CREATE  = $(patsubst %,$(ODIR)/%,$(OBJ_CREATE))
-_OBJ_READ    = $(patsubst %,$(ODIR)/%,$(OBJ_READ))
-_OBJ_COMPARE = $(patsubst %,$(ODIR)/%,$(OBJ_COMPARE))
+SOURCE_DIR = src
+BUILD_DIR  = build
+HEADER_DIR = include
 
 
+SOURCES = $(shell find $(SOURCE_DIR) -type f -name *.cpp)
+SOURCES += $(shell find $(SOURCE_DIR) -type f -name *.cu)
+TMP = $(patsubst $(SOURCE_DIR)/%,$(BUILD_DIR)/%,$(SOURCES:.cpp=.o))
+OBJECTS = $(TMP:.cu=.o)
+HEADERS = $(shell find $(HEADER_DIR) -type f -name *.hpp)
 
-$(ODIR)/%.o: %.cpp $(DEPS)
-	$(CUDA) -c -o $@ $< $(FLAGS)
-$(ODIR)/%.o: %.cu $(DEPS)
-	$(CUDA) -c -o $@ $< $(FLAGS)
+
+#$(info $$SOURCES is [${SOURCES}])
+#$(info $$OBJECTS is [${OBJECTS}])
 
 
 
-all: main create read compare
 
-main: $(_OBJ_MAIN)
-	$(CUDA) -o $@ $^ $(FLAGS) $(LIBS)
-
-create: $(_OBJ_CREATE)
-	$(CUDA) -o $@ $^ $(FLAGS) $(LIBS)
-
-read: $(_OBJ_READ)
-	$(CUDA) -o $@ $^ $(FLAGS) $(LIBS)
-
-compare: $(_OBJ_COMPARE)
-	$(CUDA) -o $@ $^ $(FLAGS) $(LIBS)
+libgerlumph.a: $(OBJECTS)
+	ar rcs lib/$@ $^
 
 
+build/magnification_map.o: src/magnification_map.cu
+	$(CUDA) $(FLAGS) $(INC) -c -o $@ $< 
+
+build/%.o: src/%.cpp
+	$(CUDA) $(FLAGS) $(INC) -c -o $@ $< 
+
+
+test: libgerlumph.a
+	$(CUDA) test/create_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/create
+	$(CUDA) test/read_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/read
+	$(CUDA) test/compare_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/compare
+	$(CUDA) test/main.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/main
+
+
+clean:	
+	$(RM) -r $(BUILD_DIR)/* bin/* lib/*

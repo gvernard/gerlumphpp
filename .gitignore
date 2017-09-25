@@ -1,8 +1,6 @@
-obj/
+build/
 data/
-main
-create
-read
-compare
+bin/
+lib/*
 *.png
 *.fits

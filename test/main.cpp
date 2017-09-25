@@ -1,9 +1,4 @@
-#include "magnification_map.hpp"
-#include "mpd.hpp"
-#include "profile.hpp"
-#include "kernel.hpp"
-#include "light_curve.hpp"
-#include "fixed_locs.hpp"
+#include "gerlumph.hpp"
 
 int main(int argc,char* argv[]){
 

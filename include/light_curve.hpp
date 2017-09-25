@@ -1,3 +1,6 @@
+#ifndef LIGHT_CURVE_HPP
+#define LIGHT_CURVE_HPP
+
 #include <cstdlib>
 #include <cmath>
 #include <string>
@@ -65,3 +68,5 @@ private:
   const int full_sampling_lower_limit = 10;
   const int sampling_lower_limit = 3;  
 };
+
+#endif /* LIGHT_CURVE_HPP */

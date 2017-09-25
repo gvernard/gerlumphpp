@@ -1,9 +1,5 @@
-#include "magnification_map.hpp"
-#include "mpd.hpp"
+#include "gerlumph.hpp"
 #include "profile.hpp"
-#include "kernel.hpp"
-#include "light_curve.hpp"
-#include "fixed_locs.hpp"
 
 int main(int argc,char* argv[]){
   // This program simply creates to analytic profiles.
@@ -38,13 +34,13 @@ int main(int argc,char* argv[]){
   Aprof.writeImageFits("data/gauss.fits",1);
   std::cout << "Gaussian profile written" << std::endl;
 
-
+  /*
   Profile Bprof(1.25,Rein,prof_size_x,prof_size_y);
   Bprof.createUniDisc(disc_radius,disc_incl,disc_orient);
   std::cout << "created Uniform Disc profile" << std::endl;
   Bprof.writeImageFits("data/uniform_disc.fits",1);
   std::cout << "Uniform Disc profile written" << std::endl;
-
+  */
 
 
 
