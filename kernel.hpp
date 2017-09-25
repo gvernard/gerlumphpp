@@ -11,10 +11,13 @@ public:
   int hNx; // half width in pixels of corresponding profile
   int hNy; // half height in pixels of corresponding profile
 
+  Kernel(int map_Nx,int map_Ny);
   Kernel(int map_Nx,int map_Ny,Profile* profile);
   ~Kernel(){
     free(data);
   };
+
+  void setKernel(Profile* profile);
 };
 
 #endif /* KERNEL_HPP */

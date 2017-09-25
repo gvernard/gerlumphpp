@@ -3,5 +3,6 @@ data/
 main
 create
 read
+compare
 *.png
 *.fits

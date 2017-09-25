@@ -1,6 +1,5 @@
 #include "profile.hpp"
 
-
 Profile::Profile(double pixSizePhys,double Rein,double width,double height){
   this->imageType = "profile";
   this->pixSizePhys = pixSizePhys;
@@ -21,7 +20,6 @@ Profile::Profile(double pixSizePhys,double Rein,double width,double height){
 
   this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
 }
-
 
 Profile::Profile(double pixSizePhys,const std::string filename,double profPixSizePhys){
   this->imageType = "profile";
@@ -55,7 +53,6 @@ Profile::Profile(double pixSizePhys,const std::string filename,double profPixSiz
 
   this->normalize();
 }
-
 
 void Profile::interpolateProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
   // Decide on the profile width and height in pixels based on the input profile
@@ -107,16 +104,16 @@ void Profile::interpolateProfile(int Nxx,int Nyy,double* input,double profPixSiz
 }
 
 void Profile::binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
-  double dresx = Nxx*profPixSizePhys/this->pixSizePhys;
+  double dresx = (Nxx)*profPixSizePhys/this->pixSizePhys;
   this->Nx = ceil(dresx);
-  double xoffset = (this->Nx - dresx)/2.0;
+  double xoffset = fabs(this->Nx - dresx)*this->pixSizePhys/2.0;
   if( this->Nx%2 != 0 ){
     this->Nx += 1;
     xoffset += 0.5;
   }
-  double dresy = Nyy*profPixSizePhys/this->pixSizePhys;
+  double dresy = (Nyy)*profPixSizePhys/this->pixSizePhys;
   this->Ny = ceil(dresy);
-  double yoffset = (this->Ny - dresy)/2.0;
+  double yoffset = fabs(this->Ny - dresy)*this->pixSizePhys/2.0;
   if( this->Ny%2 != 0 ){
     this->Ny += 1;
     yoffset += 0.5;
@@ -135,7 +132,7 @@ void Profile::binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
       jj = floor( x/this->pixSizePhys );
 
       this->data[ii*this->Nx+jj] += input[i*Nxx+j];
-      bin_counts[ii*this->Nx+jj]++;
+      bin_counts[ii*this->Nx+jj] += 1;
     }
   }
 
@@ -144,11 +141,6 @@ void Profile::binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
   }
   free(bin_counts);
 }
-
-
-
-
-
 
 void Profile::createGaussian(double gauss_width,double gauss_height,double incl,double orient){
   // still need to implement inclination and orientation
@@ -167,7 +159,6 @@ void Profile::createGaussian(double gauss_width,double gauss_height,double incl,
 
   this->normalize();
 }
-
 
 void Profile::createUniDisc(double radius,double incl,double orient){
   // still need to implement inclination and orientation
@@ -188,8 +179,6 @@ void Profile::createUniDisc(double radius,double incl,double orient){
   this->normalize();
 }
 
-
-
 void Profile::normalize(){
   double sum = 0.;
   for(int i=0;i<this->Ny;i++){
@@ -207,36 +196,3 @@ void Profile::normalize(){
    }
   }
 }
-
-
-
-/*
-void Profile::writeProfileFits(const std::string filename){
-  long naxis    = 2;
-  long naxes[2] = {(long) this->Nx,(long) this->Ny};
-  long Ntot = (long) this->Nx*this->Ny;
-  
-  //  std::unique_ptr<CCfits::FITS> pFits(nullptr);
-  std::auto_ptr<CCfits::FITS> pFits(0);
-  pFits.reset( new CCfits::FITS("!"+filename,FLOAT_IMG,naxis,naxes) );
-  
-  std::vector<long> extAx(2,(long) this->Ny);
-  CCfits::ExtHDU* imageExt = pFits->addImage("NEW-EXTENSION",FLOAT_IMG,extAx);
-  
-  //Need Ni and Nj as index counters to flip image
-  std::valarray<float> array(Ntot);
-  long count = 0;
-  for(int j=0;j<this->Nx;j++){
-    for(int i=0;i<this->Ny;i++){
-      array[(this->Nx-1-j)*this->Ny+i] = (float) (this->data[count]);
-      count++;
-    }
-  }
-  
-  long fpixel(1);
-  imageExt->write(fpixel,Ntot,array);
-  //  pFits->pHDU().addKey("EXPOSURE",13,"Total Exposure Time"); 
-  pFits->pHDU().write(fpixel,Ntot,array); 
-  //  std::cout << pFits->pHDU() << std::endl;
-}
-*/

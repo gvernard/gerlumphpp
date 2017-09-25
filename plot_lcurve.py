@@ -44,13 +44,13 @@ ax2 = fig.add_subplot(122)
 ax2.set_ylim([0,10])
 
 
-filename = 'data/lcdata_full_'+str(index)+'.dat'
+filename = 'data/custom_full_'+str(index)+'.dat'
 if os.path.isfile(filename):
     x,y,e = np.loadtxt(filename,unpack=True)
     ax2.fill_between(x,y-e,y+e,alpha=0.3,lw=0,color="black")
     ax2.plot(x,y,color="black")
 
-
+'''
 filename = 'data/lcdata_sampled_'+str(index)+'.dat'
 if os.path.isfile(filename):
     x,y,e = np.loadtxt(filename,unpack=True)
@@ -61,7 +61,7 @@ filename = 'data/lcdata_strategy_'+str(index)+'.dat'
 if os.path.isfile(filename):
     x,y,e = np.loadtxt(filename,unpack=True)
     ax2.errorbar(x,y,yerr=e,color="red")
-
+'''
 
 
 

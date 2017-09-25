@@ -6,35 +6,28 @@
 #include "fixed_locs.hpp"
 
 int main(int argc,char* argv[]){
+  // This program reads a "user provided" profile,
+  // and interpolates or bins it to the correct pixel resolution (corresponding to the selected map and varying Rein).
+  // Can be ran on any machine (no gstar or GERLUMPH data required).
+
+
   // Generic options
-  double Rein = 500;        // in 10^14 cm
-  std::string map_id = "18200";
-
-  // Profile options
-  double prof_size_x = 400; // in 10^14 cm
-  double prof_size_y = 400; // in 10^14 cm
-
-  // A Gaussian profile
-  double gauss_sx     = 100;  // in 10^14 cm
-  double gauss_sy     = 100;  // in 10^14 cm
-  double gauss_incl   = 0;    // in degrees
-  double gauss_orient = 0;    // in degrees
-
-  // A Uniform Disc profile
-  double disc_radius = 100;  // in 10^14 cm
-  double disc_incl   = 0;    // in degrees
-  double disc_orient = 0;    // in degrees
+  double pixSizePhys;
+  double profPixSizePhys = 1.25; // in 10^14 cm, can be arbitrary
+  int sampling = 1;
 
 
 
-  Profile Aprof(1.25,"data/gauss.fits",4);
-  std::cout << Aprof.Nx << " " << Aprof.Ny << std::endl;
-  Aprof.writeImageFits("data/interpolated.fits",1);
+  pixSizePhys = 0.666;  // in 10^14 cm
+  Profile Aprof(pixSizePhys,"data/gauss.fits",profPixSizePhys);
+  Aprof.writeImageFits("data/interpolated.fits",sampling);
+  
+
+  pixSizePhys = 5.1;   // in 10^14 cm
+  Profile Bprof(pixSizePhys,"data/gauss.fits",profPixSizePhys);
+  Bprof.writeImageFits("data/binned.fits",sampling);
 
 
-  Profile Bprof(1.25,"data/gauss.fits",0.7);
-  std::cout << Bprof.Nx << " " << Bprof.Ny << std::endl;
-  Bprof.writeImageFits("data/binned.fits",1);
 
 
   return 0;
