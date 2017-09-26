@@ -17,9 +17,6 @@ public:
 
   Profile(double pixSizePhys,double Rein,double width,double height);
   Profile(double pixSizePhys,const std::string filename,double profPixSizePhys);
-  ~Profile(){
-    free(data);
-  }
 
   void createGaussian(double gauss_width,double gauss_height,double incl,double orient);
   void createUniDisc(double radius,double incl,double orient);

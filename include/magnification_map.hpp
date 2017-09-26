@@ -24,9 +24,9 @@
 #include "image.hpp"
 #include "mpd.hpp"
 #include "profile.hpp"
-#include "kernel.hpp"
 
 class EffectiveMap;
+class Kernel;
 
 struct point {
   // required in light_curve.hpp and fixed_locs.hpp where this file is included as a header
@@ -50,9 +50,6 @@ public:
   MagnificationMap(){};
   MagnificationMap(std::string id,double Rein);
   MagnificationMap(const MagnificationMap& other);
-  ~MagnificationMap(){
-    free(data);
-  };
 
   Mpd getFullMpd();
   Mpd getBinnedMpd(int Nbins);
@@ -84,7 +81,21 @@ public:
 
 
   EffectiveMap(int offset,MagnificationMap* map);
+  EffectiveMap(double d_offset,MagnificationMap* map);
   EffectiveMap(int top,int bottom,int left,int right,MagnificationMap* map);
 };
+
+
+class Kernel : public Image{
+public:
+  int hNx; // half width in pixels of corresponding profile
+  int hNy; // half height in pixels of corresponding profile
+
+  Kernel(int map_Nx,int map_Ny);
+  Kernel(int map_Nx,int map_Ny,Profile* profile);
+
+  void setKernel(Profile* profile);
+};
+
 
 #endif /* MAGNIFICATION_MAP_HPP */

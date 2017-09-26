@@ -1,5 +1,5 @@
 CUDA  = nvcc
-FLAGS = -std=c++11
+FLAGS = -std=c++11 -Wno-deprecated-gpu-targets
 LIBS  = -lcufft -lpng -lCCfits -lgerlumph
 INC   = -I include
 
@@ -16,19 +16,19 @@ HEADERS = $(shell find $(HEADER_DIR) -type f -name *.hpp)
 
 
 #$(info $$SOURCES is [${SOURCES}])
-#$(info $$OBJECTS is [${OBJECTS}])
+#$(info $$OBJECTS is [${HEADERS}])
 
 
 
 
-libgerlumph.a: $(OBJECTS)
-	ar rcs lib/$@ $^
+libgerlumph.a: $(OBJECTS) $(HEADERS)
+	ar rcs lib/$@ $(OBJECTS)
 
 
-build/magnification_map.o: src/magnification_map.cu
+build/magnification_map.o: src/magnification_map.cu $(HEADERS)
 	$(CUDA) $(FLAGS) $(INC) -c -o $@ $< 
 
-build/%.o: src/%.cpp
+build/%.o: src/%.cpp $(HEADERS)
 	$(CUDA) $(FLAGS) $(INC) -c -o $@ $< 
 
 

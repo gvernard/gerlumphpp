@@ -47,8 +47,8 @@ void Image::writeImageFits(const std::string filename,int sampling){
 
 void Image::writeImagePNG(const std::string filename,int sampling){
   // read, sample, and scale map
-  int nNx = (int) (this->Nx/sampling);
-  int nNy = (int) (this->Ny/sampling);
+  int nNx = floor(this->Nx/sampling)-1;
+  int nNy = floor(this->Ny/sampling)-1;
   int* colors = (int*) calloc(nNx*nNy,sizeof(int));
   if( this->imageType == "map" ){
     scaleMap(colors,sampling);
@@ -74,10 +74,12 @@ void Image::scaleMap(int* colors,int sampling){
   double scale_fac = 255/(fabs(scale_min) + scale_max);
   double dum,dum2;
 
-  long count = 0;
-  for(int i=0;i<this->Ny;i+=sampling){
-    for(int j=0;j<this->Nx;j+=sampling){
-      dum = log10(this->data[i*this->Nx+j]);
+  int nNx = floor(this->Nx/sampling)-1;
+  int nNy = floor(this->Ny/sampling)-1;
+
+  for(int i=0;i<nNy;i++){
+    for(int j=0;j<nNx;j++){
+      dum = log10(this->data[i*sampling*this->Nx+j*sampling]);
       if( dum < scale_min ){
 	dum = scale_min;
       }
@@ -86,8 +88,7 @@ void Image::scaleMap(int* colors,int sampling){
       }
       
       dum2 = (dum + fabs(scale_min))*scale_fac;
-      colors[count] = (int) round(dum2);
-      count++;
+      colors[i*nNx+j] = (int) round(dum2);
     }
   }
 }
@@ -141,14 +142,13 @@ void Image::setRGB(int* rgb){
 }
 
 void Image::writeObjectPNG(const std::string filename,int width,int height,int* colors,int* rgb){
-  FILE* fp            = fopen(filename.data(), "wb");
-  png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  FILE* fp            = fopen(filename.data(),"wb");
+  png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,NULL,NULL,NULL);
   png_infop info_ptr  = png_create_info_struct(png_ptr);
   
-  png_init_io(png_ptr, fp);
-  png_set_IHDR(png_ptr, info_ptr, width, height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
-  png_write_info(png_ptr, info_ptr);
-  
+  png_init_io(png_ptr,fp);
+  png_set_IHDR(png_ptr,info_ptr,width,height,8,PNG_COLOR_TYPE_RGB,PNG_INTERLACE_NONE,PNG_COMPRESSION_TYPE_BASE,PNG_FILTER_TYPE_BASE);
+  png_write_info(png_ptr,info_ptr);
   
   png_bytep row = (png_bytep) malloc(3 * width * sizeof(png_byte));
   int cindex;
@@ -163,7 +163,7 @@ void Image::writeObjectPNG(const std::string filename,int width,int height,int* 
     png_write_row(png_ptr, row);
   }
   png_write_end(png_ptr, NULL);
-  
+
   
   fclose(fp);
   png_free_data(png_ptr,info_ptr,PNG_FREE_ALL,-1);
