@@ -17,13 +17,17 @@ public:
   double* dm;
 
   void writeData(const std::string filename);
-  // some functions doing statistics with light curves
+  void writeDegraded(const std::string filename,std::string m_type);
+  void writeDegraded(const std::string filename,std::string t_type,std::string m_type);
+
+ // add more functions doing statistics with light curves, maybe get wavelet spectrum, etc
 };
 
 
 class LightCurveCollection {
 public:
   int Ncurves;
+  std::string type;
   point* A; // initial location of the light curves in pixels
   point* B; // final location of the light curves in pixels
   LightCurve* lightCurves;
@@ -59,6 +63,7 @@ public:
 
   void writeLocations(const std::string filename);
   void writeCurves(const std::string prefix);
+  void writeCurvesDegraded(const std::string prefix,const std::string degraded); // degraded can be byte, int16, bytebyte, int16byte, or int16int16.
 
 private:
   const double factor = 8.64*1.e-5; // conversion from [day*km/s] to [pixels]

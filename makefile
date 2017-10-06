@@ -33,9 +33,9 @@ build/%.o: src/%.cpp $(HEADERS)
 
 
 test: libgerlumph.a
-	$(CUDA) test/create_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/create
-	$(CUDA) test/read_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/read
-	$(CUDA) test/compare_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/compare
+	$(CUDA) test/create_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/create
+#	$(CUDA) test/read_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/read
+#	$(CUDA) test/compare_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/compare
 	$(CUDA) test/main.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/main
 
 

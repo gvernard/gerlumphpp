@@ -1,6 +1,6 @@
 #include "image.hpp"
 
-void Image::writeImageFits(const std::string filename,int sampling){
+void Image::writeImageFITS(const std::string filename,int sampling){
   // read, sample, and scale map
   int nNx = (int) (this->Nx/sampling);
   int nNy = (int) (this->Ny/sampling);
@@ -99,9 +99,12 @@ void Image::scaleProfile(int* colors,int sampling){
   double scale_min = 1.0;
   double dum;
 
-  for(int i=0;i<this->Ny;i+=sampling){
-    for(int j=0;j<this->Nx;j+=sampling){
-      dum = this->data[i*this->Nx+j];
+  int nNx = floor(this->Nx/sampling)-1;
+  int nNy = floor(this->Ny/sampling)-1;
+
+  for(int i=0;i<nNy;i++){
+    for(int j=0;j<nNx;j++){
+      dum = this->data[i*sampling*this->Nx+j*sampling];
       if( dum < scale_min ){
 	scale_min = dum;
       }
@@ -112,12 +115,10 @@ void Image::scaleProfile(int* colors,int sampling){
   }
   double scale_fac = 255/(fabs(scale_min) + scale_max);
 
-  long count = 0;
-  for(int i=0;i<this->Ny;i+=sampling){
-    for(int j=0;j<this->Nx;j+=sampling){
-      dum = this->data[i*this->Nx+j];
-      colors[count] = (int) round( (dum + fabs(scale_min))*scale_fac );
-      count++;
+  for(int i=0;i<nNy;i++){
+    for(int j=0;j<nNx;j++){
+      dum = this->data[i*sampling*this->Nx+j*sampling];
+      colors[i*nNx+j] = (int) round( (dum + fabs(scale_min))*scale_fac );
     }
   }
 }

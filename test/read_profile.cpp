@@ -20,12 +20,12 @@ int main(int argc,char* argv[]){
 
   pixSizePhys = 0.666;  // in 10^14 cm
   Profile Aprof(pixSizePhys,"data/gauss.fits",profPixSizePhys);
-  Aprof.writeImageFits("data/interpolated.fits",sampling);
+  Aprof.writeImageFITS("data/interpolated.fits",sampling);
   
 
   pixSizePhys = 5.1;   // in 10^14 cm
   Profile Bprof(pixSizePhys,"data/gauss.fits",profPixSizePhys);
-  Bprof.writeImageFits("data/binned.fits",sampling);
+  Bprof.writeImageFITS("data/binned.fits",sampling);
 
 
 

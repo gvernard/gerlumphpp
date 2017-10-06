@@ -1,31 +1,132 @@
 #include "profile.hpp"
 
-Profile::Profile(double pixSizePhys,double Rein,double width,double height){
-  this->imageType = "profile";
-  this->pixSizePhys = pixSizePhys;
+#include <cmath>
+#include <iostream>
+#include <string>
 
-  this->Nx = (int) ceil(width/pixSizePhys);
-  this->Ny = (int) ceil(height/pixSizePhys);
+#include <CCfits/CCfits>
 
-  // Making sure that the profile dimensions in pixels are always even
-  if( this->Nx%2 != 0 ){
-    this->Nx += 1;
+
+//////////////////////// CLASS IMPLEMENTATION: BaseProfile ////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+BaseProfile::BaseProfile(double pixSizePhys,double incl,double orient){
+    this->imageType = "profile";
+    this->pixSizePhys = pixSizePhys;
+    this->incl = incl;
+    this->orient = orient;
+}
+double BaseProfile::sizeParametric(parsParametric pars,double lrest){
+  // s0 in [10^14 cm], l0 and lrest in [nm]
+  double r = pars.s0*pow(lrest/pars.l0,pars.n);
+  return r; // in [10^14 cm]
+}
+double BaseProfile::sizeSS(parsSSdisc pars,double lrest){
+  double a = pow(lrest,4.0);
+  double b = pow(pars.mbh,2.0);
+  double c = pars.fedd/pars.eta;
+  double r = 0.0097*pow(a*b*c,1.0/3.0); // in [10^14 cm]
+}
+void BaseProfile::normalize(){
+  double sum = 0.;
+  for(int i=0;i<this->Ny;i++){
+    for(int j=0;j<this->Nx;j++){
+      sum += this->data[i*Nx+j];
+      //      std::cout << array[j*Nx+j] << std::endl;
+    }
   }
-  if( this->Ny%2 != 0 ){
-    this->Ny += 1;
+  //  std::cout << sum << std::endl;
+  
+  for(int i=0;i<Ny;i++){
+    for(int j=0;j<Nx;j++){
+      this->data[i*Nx+j] /= sum;
+      //      std::cout << this->data[i*Nx+j] << std::endl;
+   }
   }
-
-  this->width  = Nx*pixSizePhys/Rein; // in Rein
-  this->height = Ny*pixSizePhys/Rein; // in Rein
-
-  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+}
+void BaseProfile::makeEven(int& N){
+  if( N%2 != 0 ){
+    N += 1;
+  }
 }
 
-Profile::Profile(double pixSizePhys,const std::string filename,double profPixSizePhys){
-  this->imageType = "profile";
-  this->pixSizePhys = pixSizePhys;
 
-  
+//////////////////////// CLASS IMPLEMENTATION: UniformDisc ////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+UniformDisc::UniformDisc(double pixSizePhys,double R,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->R = R;
+  generateValues();
+  normalize();
+}
+UniformDisc::UniformDisc(double pixSizePhys,parsParametric pars,double lrest,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->R = sizeParametric(pars,lrest);
+  generateValues();
+  normalize();
+}
+UniformDisc::UniformDisc(double pixSizePhys,parsSSdisc pars,double lrest,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->R = sizeSS(pars,lrest);
+  generateValues();
+  normalize();
+}
+void UniformDisc::generateValues(){
+  this->Nx = 2 * (3+(int) ceil(this->R/this->pixSizePhys)); // x2 the disc radius + 3 pixels
+  this->Ny = 2 * (3+(int) ceil(this->R/this->pixSizePhys)); // x2 the disc radius + 3 pixels
+  makeEven(this->Nx);
+  makeEven(this->Ny);
+  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+
+  for(int i=0;i<this->Ny;i++){
+    double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+    for(int j=0;j<this->Nx;j++){
+      double x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+      double r = hypot(x,y);
+      if( r < this->R ){
+	this->data[i*this->Nx+j] = 1.0;
+      } else {
+	this->data[i*this->Nx+j] = 0.0;
+      }
+    }
+  }
+}
+
+
+//////////////////////// CLASS IMPLEMENTATION: Gaussian ////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Gaussian::Gaussian(double pixSizePhys,double R,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->R = R;
+  generateValues();
+  normalize();
+}
+Gaussian::Gaussian(double pixSizePhys,parsParametric pars,double lrest,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->R = sizeParametric(pars,lrest);
+  generateValues();
+  normalize();
+}
+Gaussian::Gaussian(double pixSizePhys,parsSSdisc pars,double lrest,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->R = sizeSS(pars,lrest);
+  generateValues();
+  normalize();
+}
+void Gaussian::generateValues(){
+  this->Nx = (int) ceil(4.72*this->R/this->pixSizePhys); // width is equal to x4 the half light radius
+  this->Ny = (int) ceil(4.72*this->R/this->pixSizePhys); // height is equal to x4 the half light radius
+  makeEven(this->Nx);
+  makeEven(this->Ny);
+  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+
+  double s = 2*pow(this->R,2);
+  for(int i=0;i<this->Ny;i++){
+    double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+    for(int j=0;j<this->Nx;j++){
+      double x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+      this->data[i*this->Nx+j] = exp(-x*x/s-y*y/s);
+    }
+  }
+}
+
+
+//////////////////////// CLASS IMPLEMENTATION: Custom ////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+Custom::Custom(double pixSizePhys,const std::string filename,double profPixSizePhys,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
   // Read the profile from .fits format
   std::unique_ptr<CCfits::FITS> pInfile(new CCfits::FITS(filename,CCfits::Read,true));
   CCfits::PHDU& image = pInfile->pHDU();
@@ -51,10 +152,9 @@ Profile::Profile(double pixSizePhys,const std::string filename,double profPixSiz
   }
   free(input);
 
-  this->normalize();
+  normalize();
 }
-
-void Profile::interpolateProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
+void Custom::interpolateProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
   // Decide on the profile width and height in pixels based on the input profile
   double dresx = (Nxx-1)*profPixSizePhys/this->pixSizePhys;
   this->Nx = floor(dresx);
@@ -102,8 +202,7 @@ void Profile::interpolateProfile(int Nxx,int Nyy,double* input,double profPixSiz
     }
   }
 }
-
-void Profile::binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
+void Custom::binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
   double dresx = (Nxx)*profPixSizePhys/this->pixSizePhys;
   this->Nx = ceil(dresx);
   double xoffset = fabs(this->Nx - dresx)*this->pixSizePhys/2.0;
@@ -140,59 +239,4 @@ void Profile::binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
     this->data[i] = this->data[i]/((double) bin_counts[i]);
   }
   free(bin_counts);
-}
-
-void Profile::createGaussian(double gauss_width,double gauss_height,double incl,double orient){
-  // still need to implement inclination and orientation
-  double x  = 0.0;
-  double y  = 0.0;
-  double sx = 2*pow(gauss_width,2);
-  double sy = 2*pow(gauss_height,2);
-  
-  for(int i=0;i<this->Ny;i++){
-    y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-    for(int j=0;j<this->Nx;j++){
-      x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-      this->data[i*this->Nx+j] = exp(-x*x/sx-y*y/sy);
-    }
-  }
-
-  this->normalize();
-}
-
-void Profile::createUniDisc(double radius,double incl,double orient){
-  // still need to implement inclination and orientation
-  double x,y,r;
-  for(int i=0;i<this->Ny;i++){
-    y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-    for(int j=0;j<this->Nx;j++){
-      x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-      r = hypot(x,y);
-      if( r < radius ){
-	this->data[i*this->Nx+j] = 1.0;
-      } else {
-	this->data[i*this->Nx+j] = 0.0;
-      }
-    }
-  }
-
-  this->normalize();
-}
-
-void Profile::normalize(){
-  double sum = 0.;
-  for(int i=0;i<this->Ny;i++){
-    for(int j=0;j<this->Nx;j++){
-      sum += this->data[i*Nx+j];
-      //      std::cout << array[j*Nx+j] << std::endl;
-    }
-  }
-  //  std::cout << sum << std::endl;
-  
-  for(int i=0;i<Ny;i++){
-    for(int j=0;j<Nx;j++){
-      this->data[i*Nx+j] /= sum;
-      //      std::cout << this->data[i*Nx+j] << std::endl;
-   }
-  }
 }

@@ -97,31 +97,33 @@ void MagnificationMap::convolve(Kernel* kernel,EffectiveMap* emap){
 
 
 Mpd MagnificationMap::getFullMpd(){
-  if( this->convolved ){
-    std::cout << "Map is convolved. It has to be in ray counts in order to use this function." << std::endl;
-    throw "This is an exception!";
-  } else {
-    double muth   = fabs(1.0/(pow(1.0-this->k,2)-pow(this->g,2)));
-
+  Mpd theMpd(0);
+  try {
+    if( this->convolved ){
+      throw "Map is convolved. It has to be in ray counts in order to use this function.";
+    }
     thrust::device_vector<int> counts;
     thrust::device_vector<double> bins;
     thrust::device_vector<double> data(this->data,this->data+this->Nx*this->Ny);
     thrust::sort(data.begin(),data.end());
-    
+
     int num_bins = thrust::inner_product(data.begin(),data.end()-1,data.begin()+1,int(1),thrust::plus<int>(),thrust::not_equal_to<double>());
     counts.resize(num_bins);
     bins.resize(num_bins);
+
     thrust::reduce_by_key(data.begin(),data.end(),thrust::constant_iterator<int>(1),bins.begin(),counts.begin());
     thrust::host_vector<int> hcounts(counts);
     thrust::host_vector<double> hbins(bins);
     
-    Mpd theMpd(hcounts.size());
+    theMpd.reset(num_bins);
     for(unsigned int i=0;i<hcounts.size();i++){
       theMpd.counts[i] = (double) (hcounts[i])/(double) (this->Nx*this->Ny);
       theMpd.bins[i]   = ((double) (hbins[i]));
     }
-    return theMpd; 
+  } catch(const char* msg){
+    std::cout << msg << std::endl;
   }
+  return theMpd;
 }
 
 
@@ -305,14 +307,14 @@ Kernel::Kernel(int map_Nx,int map_Ny){
   this->data = (double*) calloc(map_Nx*map_Ny,sizeof(double));
 }
 
-Kernel::Kernel(int map_Nx,int map_Ny,Profile* profile){
+Kernel::Kernel(int map_Nx,int map_Ny,BaseProfile* profile){
   this->Nx   = map_Nx;
   this->Ny   = map_Ny;
   this->data = (double*) calloc(map_Nx*map_Ny,sizeof(double));
   setKernel(profile);
 }
 
-void Kernel::setKernel(Profile* profile){
+void Kernel::setKernel(BaseProfile* profile){
   this->hNx = profile->Nx/2;
   this->hNy = profile->Ny/2;
 

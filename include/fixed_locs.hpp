@@ -1,13 +1,12 @@
 #ifndef FIXED_LOCS_HPP
 #define FIXED_LOCS_HPP
 
-#include <cstdlib>
-
 #include "magnification_map.hpp"
 
 class FixedLocationCollection {
 public:
   int Nlocs;
+  std::string type;
   point* A;
   double* m;
   double* dm;
@@ -26,7 +25,10 @@ public:
 
   void setEmap(EffectiveMap* emap);
   void createRandomLocations(int seed);
+  void createGridLocations();
   void extract();
+
+  double checkOverlap(int profRadius);
 
   void writeLocations(const std::string filename);
   void writeData(const std::string filename);

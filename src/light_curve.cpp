@@ -141,6 +141,7 @@ std::vector<int> LightCurveCollection::checkSampling(double v,std::vector<double
 
 
 void LightCurveCollection::extractFull(){
+  this->type = "full";
   for(int i=0;i<this->Ncurves;i++){
     int Dj   = floor(this->B[i].x - this->A[i].x);
     int Di   = floor(this->B[i].y - this->A[i].y);
@@ -165,6 +166,7 @@ void LightCurveCollection::extractFull(){
 }
 
 void LightCurveCollection::extractSampled(double v,double dt,double tmax){
+  this->type = "sampled";
   for(int i=0;i<this->Ncurves;i++){
     int Dj   = floor(this->B[i].x - this->A[i].x);
     int Di   = floor(this->B[i].y - this->A[i].y);
@@ -189,6 +191,7 @@ void LightCurveCollection::extractSampled(double v,double dt,double tmax){
 }
 
 void LightCurveCollection::extractStrategy(double v,std::vector<double> t){
+  this->type = "strategy";
   for(int i=0;i<this->Ncurves;i++){
     int Dj   = floor(this->B[i].x - this->A[i].x);
     int Di   = floor(this->B[i].y - this->A[i].y);
@@ -260,10 +263,52 @@ void LightCurveCollection::interpolatePlane(double xk,double yk,double& m,double
   dm = df00*w00 + df10*w10 + df01*w01 + df11*w11;
 }
 
+
 void LightCurveCollection::writeCurves(const std::string prefix){
   for(int i=0;i<this->Ncurves;i++){
     std::string fname = prefix + std::to_string(i) + ".dat";
     this->lightCurves[i].writeData(fname);
+  }
+}
+
+
+void LightCurveCollection::writeCurvesDegraded(const std::string prefix,const std::string degraded){
+  if( this->type == "full" || this->type == "sampled" ){
+    try {
+      if( degraded == "byte" || degraded == "int16" ){
+	for(int i=0;i<this->Ncurves;i++){
+	  std::string fname = prefix + std::to_string(i) + "_b.bin";
+	  this->lightCurves[i].writeDegraded(fname,degraded); // "degraded" has to be "byte" or "int16"
+	}
+      } else {
+	throw "Only allowed options for a degraded output with a full or regularly sampled light curve are: 'byte' and 'int16'";
+      }
+    } catch(const char* msg){
+      std::cout << msg << std::endl;
+    }
+  } else if( this->type == "strategy" ){
+    try {
+      if( degraded == "bytebyte" ){
+	for(int i=0;i<this->Ncurves;i++){
+	  std::string fname = prefix + std::to_string(i) + "_bb.bin";
+	  this->lightCurves[i].writeDegraded(fname,"byte","byte");
+	}
+      } else if( degraded == "int16byte" ){
+	for(int i=0;i<this->Ncurves;i++){
+	  std::string fname = prefix + std::to_string(i) + "_ib.bin";
+	  this->lightCurves[i].writeDegraded(fname,"int16","byte");
+	}
+      } else if( degraded == "int16int16" ){
+	for(int i=0;i<this->Ncurves;i++){
+	  std::string fname = prefix + std::to_string(i) + "_ii.bin";
+	  this->lightCurves[i].writeDegraded(fname,"int16","int16");
+	}
+      } else {
+	throw "Only allowed options for a degraded output with an irregularly sampled light curve are: 'bytebyte', 'int16byte', and 'int16int16'";
+      }
+    } catch(const char* msg){
+      std::cout << msg << std::endl;
+    }
   }
 }
 
@@ -273,4 +318,12 @@ void LightCurve::writeData(const std::string filename){
     fprintf(fh,"%11.6e %11.6e %11.6e\n",this->t[i],this->m[i],this->dm[i]);
   }
   fclose(fh);
+}
+
+void LightCurve::writeDegraded(const std::string filename,std::string m_type){
+
+}
+
+void LightCurve::writeDegraded(const std::string filename,std::string t_type,std::string m_type){
+
 }

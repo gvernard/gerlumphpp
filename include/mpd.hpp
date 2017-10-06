@@ -22,7 +22,8 @@ public:
     free(counts);
   }
 
-  void writeMpd(const std::string file);
+  void reset(int Nbins);
+  void writeMpd(const std::string filename);
 };
 
 #endif /* MPD_HPP */

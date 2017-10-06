@@ -23,7 +23,7 @@ public:
   };
 
   void writeImagePNG(const std::string filename,int sampling);
-  void writeImageFits(const std::string filename,int sampling);
+  void writeImageFITS(const std::string filename,int sampling);
 
 private:
   void scaleMap(int* colors,int sampling);
