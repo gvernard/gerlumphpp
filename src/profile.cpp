@@ -72,7 +72,9 @@ void UniformDisc::generateValues(){
   this->Ny = 2 * (3+(int) ceil(this->R/this->pixSizePhys)); // x2 the disc radius + 3 pixels
   makeEven(this->Nx);
   makeEven(this->Ny);
-  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->data   = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width  = this->pixSizePhys*this->Nx;
+  this->height = this->pixSizePhys*this->Ny;
 
   for(int i=0;i<this->Ny;i++){
     double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
@@ -111,7 +113,9 @@ void Gaussian::generateValues(){
   this->Ny = (int) ceil(4.72*this->R/this->pixSizePhys); // height is equal to x4 the half light radius
   makeEven(this->Nx);
   makeEven(this->Ny);
-  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->data  = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width  = this->pixSizePhys*this->Nx;
+  this->height = this->pixSizePhys*this->Ny;
 
   double s = 2*pow(this->R,2);
   for(int i=0;i<this->Ny;i++){
@@ -170,7 +174,9 @@ void Custom::interpolateProfile(int Nxx,int Nyy,double* input,double profPixSize
     this->Ny -= 1;
     yoffset += 0.5;
   }
-  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->data   = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width  = this->pixSizePhys*this->Nx;
+  this->height = this->pixSizePhys*this->Ny;
 
   double x,y,xp,yp,dx,dy,ddx,ddy,w00,w10,w01,w11,f00,f10,f01,f11;
   int ii,jj;
@@ -217,7 +223,9 @@ void Custom::binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
     this->Ny += 1;
     yoffset += 0.5;
   }
-  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->data   = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width  = this->pixSizePhys*this->Nx;
+  this->height = this->pixSizePhys*this->Ny;
 
   int* bin_counts = (int*) calloc(this->Nx*this->Ny,sizeof(int));
   int ii,jj;

@@ -44,6 +44,7 @@ public:
   double height; // in Rein
   double avgmu;
   double avgN;
+  double mu_th;
   double pixSizePhys; // in units of [10^14 cm]
   bool convolved;
 

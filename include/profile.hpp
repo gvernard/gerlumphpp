@@ -37,8 +37,10 @@ struct factoryProfilePars {
 class BaseProfile : public Image {
 public:
   double pixSizePhys; // in [10^14 cm]
-  double incl;
-  double orient;
+  double width;       // in [10^14 cm]
+  double height;      // in [10^14 cm]
+  double incl;        // in [degrees]
+  double orient;      // in [degrees]
   BaseProfile(double pixSizePhys,double incl,double orient);
   virtual void generateValues() = 0;
 protected:

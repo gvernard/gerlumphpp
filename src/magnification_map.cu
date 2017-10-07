@@ -18,6 +18,7 @@ MagnificationMap::MagnificationMap(std::string id,double Rein){
   this->Ny = this->Nx;
   this->height = this->width;
   this->pixSizePhys = Rein*this->width/this->Nx; // in units of [10^14 cm]
+  this->mu_th = 1.0/(pow(1.0-this->k,2)-pow(this->g,2));
 
   // Read map data
   file = this->path + this->id + "/map.bin";
@@ -48,6 +49,7 @@ MagnificationMap::MagnificationMap(const MagnificationMap& other){
   this->height = other.height;
   this->avgmu  = other.avgmu;
   this->avgN   = other.avgN;
+  this->mu_th  = other.mu_th;
   this->pixSizePhys = other.pixSizePhys; // in units of [10^14 cm]
   this->convolved   = other.convolved;
 
