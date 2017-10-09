@@ -1,6 +1,10 @@
+CC    = g++
 CUDA  = nvcc
-FLAGS = -std=c++11 -Wno-deprecated-gpu-targets
-LIBS  = -lcufft -lpng -lCCfits -lgerlumph
+#CC_FLAGS = -std=c++11 -Wno-deprecated-gpu-targets # for a static library
+CC_FLAGS   = -std=c++11 -fPIC
+CUDA_FLAGS = -std=c++11 --compiler-options '-fPIC' -Wno-deprecated-gpu-targets # for a dynamic library
+CC_LIBS    = -lpng -lCCfits
+CUDA_LIBS  = -lcuda -lcudart -lcufft
 INC   = -I include
 
 SOURCE_DIR = src
@@ -9,6 +13,7 @@ HEADER_DIR = include
 
 
 SOURCES = $(shell find $(SOURCE_DIR) -type f -name *.cpp)
+#OBJECTS = $(patsubst $(SOURCE_DIR)/%,$(BUILD_DIR)/%,$(SOURCES:.cpp=.o))
 SOURCES += $(shell find $(SOURCE_DIR) -type f -name *.cu)
 TMP = $(patsubst $(SOURCE_DIR)/%,$(BUILD_DIR)/%,$(SOURCES:.cpp=.o))
 OBJECTS = $(TMP:.cu=.o)
@@ -20,23 +25,27 @@ HEADERS = $(shell find $(HEADER_DIR) -type f -name *.hpp)
 
 
 
-
-libgerlumph.a: $(OBJECTS) $(HEADERS)
-	ar rcs lib/$@ $(OBJECTS)
+DOMAIN := $(shell dnsdomainname)
+libgerlumph.so: $(OBJECTS) $(HEADERS)
+ifeq ($(DOMAIN),hpc.swin.edu.au)
+	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-8.0/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS)
+else
+	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS)
+endif
 
 
 build/magnification_map.o: src/magnification_map.cu $(HEADERS)
-	$(CUDA) $(FLAGS) $(INC) -c -o $@ $< 
+	$(CUDA) $(CUDA_FLAGS) $(CUDA_LIBS) $(INC) -c -o $@ $< 
 
 build/%.o: src/%.cpp $(HEADERS)
-	$(CUDA) $(FLAGS) $(INC) -c -o $@ $< 
+	$(CC) $(CC_FLAGS) $(CC_LIBS) $(INC) -c -o $@ $< 
 
 
-test: libgerlumph.a
-	$(CUDA) test/create_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/create
-#	$(CUDA) test/read_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/read
-#	$(CUDA) test/compare_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/compare
-	$(CUDA) test/main.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/main
+test: libgerlumph.so
+#	$(CC) test/create_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/create
+#	$(CC) test/read_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/read
+#	$(CC) test/compare_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/compare
+	$(CC) test/main.cpp $(CC_FLAGS) -I include -L lib -lgerlumph -o bin/main
 
 
 clean:	

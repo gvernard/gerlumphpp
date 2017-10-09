@@ -1,5 +1,23 @@
 #include "magnification_map.hpp"
 
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+#include <thrust/sort.h>
+#include <thrust/copy.h>
+#include <thrust/random.h>
+#include <thrust/inner_product.h>
+#include <thrust/binary_search.h>
+#include <thrust/adjacent_difference.h>
+#include <thrust/iterator/constant_iterator.h>
+#include <thrust/iterator/counting_iterator.h>
+
+#include <cufft.h>
+
+// These two prototype functions are used only to compile this source code.
+// The 'static' keyword causes their visibility to be limited to the translation unit (this single .cu or .cpp file where they are defined).
+static int myfft2d_r2c(int Nx, int Ny, cufftDoubleReal* data, cufftDoubleComplex* Fdata);
+static int myfft2d_c2r(int Nx, int Ny, cufftDoubleComplex* Fdata, cufftDoubleReal* data);
+
 
 MagnificationMap::MagnificationMap(std::string id,double Rein){
   this->id = id;
@@ -174,7 +192,7 @@ Mpd MagnificationMap::getBinnedMpd(int Nbins){
 }
 
 
-int MagnificationMap::myfft2d_r2c(int Nx,int Ny,cufftDoubleReal* data,cufftDoubleComplex* Fdata){
+int myfft2d_r2c(int Nx,int Ny,cufftDoubleReal* data,cufftDoubleComplex* Fdata){
   cufftHandle plan;
   cufftDoubleReal* data_GPU;
   cufftDoubleComplex* Fdata_GPU;
@@ -200,7 +218,7 @@ int MagnificationMap::myfft2d_r2c(int Nx,int Ny,cufftDoubleReal* data,cufftDoubl
 }
 
 
-int MagnificationMap::myfft2d_c2r(int Nx, int Ny, cufftDoubleComplex* Fdata, cufftDoubleReal* data){
+int myfft2d_c2r(int Nx, int Ny, cufftDoubleComplex* Fdata, cufftDoubleReal* data){
   cufftHandle plan;
   cufftDoubleComplex* Fdata_GPU;
   cufftDoubleReal* data_GPU;

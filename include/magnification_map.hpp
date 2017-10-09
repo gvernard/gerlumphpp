@@ -8,19 +8,6 @@
 #include <iostream>
 #include <iterator>
 
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <thrust/sort.h>
-#include <thrust/copy.h>
-#include <thrust/random.h>
-#include <thrust/inner_product.h>
-#include <thrust/binary_search.h>
-#include <thrust/adjacent_difference.h>
-#include <thrust/iterator/constant_iterator.h>
-#include <thrust/iterator/counting_iterator.h>
-
-#include <cufft.h>
-
 #include "image.hpp"
 #include "mpd.hpp"
 #include "profile.hpp"
@@ -61,11 +48,6 @@ public:
 private:
   const std::string path = "/lustre/projects/p001_swin/gvernardos/DATABASES/gerlumph_db/";
   //  const std::string path = "/data/users/gvernard/";
-
-  inline void _cudaSafeCall(cudaError err,const char *filename,const int line);
-  inline void _cufftSafeCall(cufftResult err,const char* filename,const int line);
-  int myfft2d_r2c(int Nx, int Ny, cufftDoubleReal* data, cufftDoubleComplex* Fdata);
-  int myfft2d_c2r(int Nx, int Ny, cufftDoubleComplex* Fdata, cufftDoubleReal* data);
 
   void scaleMap(int* colors,int sampling);
   void readRGB(const std::string filename,int* rgb);
