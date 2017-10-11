@@ -42,10 +42,10 @@ build/%.o: src/%.cpp $(HEADERS)
 
 
 test: libgerlumph.so
-#	$(CC) test/create_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/create
 #	$(CC) test/read_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/read
 #	$(CC) test/compare_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/compare
 	$(CC) test/main.cpp $(CC_FLAGS) -I include -L lib -lgerlumph -o bin/main
+	$(CC) test/create_profiles.cpp $(CC_FLAGS) -I include -L lib -lgerlumph -o bin/create
 
 
 clean:	

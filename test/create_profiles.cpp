@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <string>
 #include "gerlumph.hpp"
 
 
@@ -28,7 +29,7 @@ int main(int argc,char* argv[]){
   for(int i=0;i<lrest.size();i++){
     Gaussian gauss(pixSizePhys,pars,lrest[i],0,0);
     //    gauss.writeImagePNG("../data/gauss_"+std::to_string(i)+".png",1);
-    gauss.writeImageFITS("../data/gauss_"+std::to_string(i)+".fits",1);
+    gauss.writeImageFITS(std::to_string(i)+".fits",1);
 
     //    UniformDisc disc(pixSizePhys,pars,lrest[i],0,0);
     //    disc.writeImagePNG("../data/disc_"+std::to_string(i)+".png",1);

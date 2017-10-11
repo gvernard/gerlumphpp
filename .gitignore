@@ -2,4 +2,6 @@ build/
 data/
 bin/
 lib/*
+*.png
+*.fits
 push_library.sh
