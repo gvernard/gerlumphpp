@@ -10,10 +10,22 @@
 //////////////////////// CLASS IMPLEMENTATION: BaseProfile ////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 BaseProfile::BaseProfile(double pixSizePhys,double incl,double orient){
-    this->imageType = "profile";
-    this->pixSizePhys = pixSizePhys;
-    this->incl = incl;
-    this->orient = orient;
+  this->imageType = "profile";
+  this->pixSizePhys = pixSizePhys;
+  this->incl = incl;
+  this->orient = orient;
+}
+BaseProfile::BaseProfile(const BaseProfile& other){
+  this->imageType = other.imageType;
+  this->pixSizePhys = other.pixSizePhys;
+  this->incl = other.incl;
+  this->orient = other.orient;
+  this->Nx = other.Nx;
+  this->Ny = other.Ny;
+  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  for(long i=0;i<this->Nx*this->Ny;i++){
+    this->data[i] = other.data[i];
+  }
 }
 double BaseProfile::sizeParametric(parsParametric pars,double lrest){
   // s0 in [10^14 cm], l0 and lrest in [nm]

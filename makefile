@@ -28,7 +28,7 @@ HEADERS = $(shell find $(HEADER_DIR) -type f -name *.hpp)
 DOMAIN := $(shell dnsdomainname)
 libgerlumph.so: $(OBJECTS) $(HEADERS)
 ifeq ($(DOMAIN),hpc.swin.edu.au)
-	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-8.0/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS)
+	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-7.5/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS)
 else
 	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS)
 endif

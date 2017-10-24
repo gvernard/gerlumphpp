@@ -66,6 +66,40 @@ void LightCurveCollection::createRandomLocations(int seed,int maxLen){
   }
 }
 
+void LightCurveCollection::createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi){
+  srand48(seed);
+  double d2r = 0.017453; // degrees to radians
+  point A;
+  point B;
+  double len,lenx,leny,phi_rad;
+
+  for(int i=0;i<this->Ncurves;i++){
+    len = tmax*v[i];
+    phi_rad = phi[i]*d2r;
+    lenx = len*cos(phi_rad);
+    leny = len*sin(phi_rad);
+    
+    while(true){
+      A.x = drand48()*this->Nx;
+      A.y = drand48()*this->Ny;
+    
+      B.x = A.x + lenx;
+      B.y = A.y + leny;
+      
+      //Is the new end point still within the (effective) map?
+      if ( (B.x < 0) || (B.x >= this->Nx) || (B.y < 0) || (B.y >= this->Ny) ){
+	//	printf("%5d%5d problem\n",(int)round(loc.xo),(int)round(loc.yo));
+	continue;
+      } else {
+	break;
+      }
+    }
+    
+    this->A[i] = A;
+    this->B[i] = B;
+  }
+}
+
 void LightCurveCollection::writeLocations(const std::string filename){
   FILE* fh = fopen(filename.data(),"w");
   for(int i=0;i<this->Ncurves;i++){
@@ -166,12 +200,18 @@ void LightCurveCollection::extractFull(){
 }
 
 void LightCurveCollection::extractSampled(double v,double dt,double tmax){
+  std::vector<double> vvec(this->Ncurves);
+  std::fill(vvec.begin(),vvec.end(),v); 
+  extractSampled(vvec,dt,tmax);
+}
+
+void LightCurveCollection::extractSampled(std::vector<double> v,double dt,double tmax){
   this->type = "sampled";
   for(int i=0;i<this->Ncurves;i++){
     int Dj   = floor(this->B[i].x - this->A[i].x);
     int Di   = floor(this->B[i].y - this->A[i].y);
     int Lmax = floor(hypot(Di,Dj));
-    int dl   = v*dt*this->factor/this->pixSizePhys;
+    int dl   = v[i]*dt*this->factor/this->pixSizePhys;
     int Nsamples = floor(Lmax/dl);
     double phi = atan2(Di,Dj);
 
@@ -191,6 +231,12 @@ void LightCurveCollection::extractSampled(double v,double dt,double tmax){
 }
 
 void LightCurveCollection::extractStrategy(double v,std::vector<double> t){
+  std::vector<double> vvec(this->Ncurves);
+  std::fill(vvec.begin(),vvec.end(),v); 
+  extractStrategy(vvec,t);
+}
+
+void LightCurveCollection::extractStrategy(std::vector<double> v,std::vector<double> t){
   this->type = "strategy";
   for(int i=0;i<this->Ncurves;i++){
     int Dj   = floor(this->B[i].x - this->A[i].x);
@@ -200,7 +246,7 @@ void LightCurveCollection::extractStrategy(double v,std::vector<double> t){
 
     std::vector<double> length; 
     for(int j=0;j<t.size();j++){
-      double len = v*t[j]*this->factor/this->pixSizePhys;
+      double len = v[i]*t[j]*this->factor/this->pixSizePhys;
       if( len <= Lmax ){
 	length.push_back(len);
       } else {

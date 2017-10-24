@@ -72,7 +72,8 @@ int main(int argc,char* argv[]){
   Kernel akernel(amap.Nx,amap.Ny,&aprofile);
   EffectiveMap emap(emap_offset,&amap);
   amap.convolve(&akernel,&emap);
-
+  emap.writeImagePNG("convolved_map.png",10);
+  emap.writeImageFITS("convolved_map.fits",10);
 
 
 

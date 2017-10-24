@@ -8,7 +8,6 @@
 
 #include "magnification_map.hpp"
 
-
 class LightCurve {
 public:
   int Nsamples;
@@ -51,6 +50,7 @@ public:
 
   void setEmap(EffectiveMap* emap);
   void createRandomLocations(int seed,int maxLen);
+  void createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi);
 
   std::vector<int> checkLengthFull();
   std::vector<int> checkLength(double v,double tmax);
@@ -59,11 +59,13 @@ public:
 
   void extractFull();
   void extractSampled(double v,double dt,double tmax);
+  void extractSampled(std::vector<double> v,double dt,double tmax);
   void extractStrategy(double v,std::vector<double> t);
+  void extractStrategy(std::vector<double> v,std::vector<double> t);
 
   void writeLocations(const std::string filename);
   void writeCurves(const std::string prefix);
-  void writeCurvesDegraded(const std::string prefix,const std::string degraded); // degraded can be byte, int16, bytebyte, int16byte, or int16int16.
+  void writeCurvesDegraded(const std::string prefix,const std::string degraded); // 'degraded' can be byte, int16, bytebyte, int16byte, or int16int16.
 
 private:
   const double factor = 8.64*1.e-5; // conversion from [day*km/s] to [pixels]

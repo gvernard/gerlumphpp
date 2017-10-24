@@ -42,12 +42,13 @@ public:
   double incl;        // in [degrees]
   double orient;      // in [degrees]
   BaseProfile(double pixSizePhys,double incl,double orient);
+  BaseProfile(const BaseProfile& other);
   virtual void generateValues() = 0;
+  double sizeParametric(parsParametric pars,double lrest);
+  double sizeSS(parsSSdisc pars,double lrest);
 protected:
   void makeEven(int& N);
   void normalize();
-  double sizeParametric(parsParametric pars,double lrest);
-  double sizeSS(parsSSdisc pars,double lrest);
   // check functions here (larger than a map,smaller than a pixel)
   // projection functions here
 };

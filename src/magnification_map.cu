@@ -322,12 +322,14 @@ EffectiveMap::EffectiveMap(int top,int bottom,int left,int right,MagnificationMa
 
 
 Kernel::Kernel(int map_Nx,int map_Ny){
+  this->imageType = "map";
   this->Nx   = map_Nx;
   this->Ny   = map_Ny;
   this->data = (double*) calloc(map_Nx*map_Ny,sizeof(double));
 }
 
 Kernel::Kernel(int map_Nx,int map_Ny,BaseProfile* profile){
+  this->imageType = "map";
   this->Nx   = map_Nx;
   this->Ny   = map_Ny;
   this->data = (double*) calloc(map_Nx*map_Ny,sizeof(double));

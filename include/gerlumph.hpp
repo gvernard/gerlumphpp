@@ -7,5 +7,6 @@
 #include "magnification_map.hpp"
 #include "mpd.hpp"
 #include "profile.hpp"
+#include "velocities.hpp"
 
 #endif /* GERLUMPH_HPP */
