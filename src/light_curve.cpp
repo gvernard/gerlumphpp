@@ -1,5 +1,9 @@
 #include "light_curve.hpp"
 
+#include <cstdlib>
+#include <cmath>
+#include <fstream>
+
 LightCurveCollection::LightCurveCollection(int Ncurves,EffectiveMap* emap){
   this->Ncurves = Ncurves;
   this->A = (point*) calloc(Ncurves,sizeof(point));
@@ -316,45 +320,22 @@ void LightCurveCollection::writeCurves(const std::string prefix){
     this->lightCurves[i].writeData(fname);
   }
 }
-
-
-void LightCurveCollection::writeCurvesDegraded(const std::string prefix,const std::string degraded){
-  if( this->type == "full" || this->type == "sampled" ){
-    try {
-      if( degraded == "byte" || degraded == "int16" ){
-	for(int i=0;i<this->Ncurves;i++){
-	  std::string fname = prefix + std::to_string(i) + "_b.bin";
-	  this->lightCurves[i].writeDegraded(fname,degraded); // "degraded" has to be "byte" or "int16"
-	}
-      } else {
-	throw "Only allowed options for a degraded output with a full or regularly sampled light curve are: 'byte' and 'int16'";
-      }
-    } catch(const char* msg){
-      std::cout << msg << std::endl;
-    }
-  } else if( this->type == "strategy" ){
-    try {
-      if( degraded == "bytebyte" ){
-	for(int i=0;i<this->Ncurves;i++){
-	  std::string fname = prefix + std::to_string(i) + "_bb.bin";
-	  this->lightCurves[i].writeDegraded(fname,"byte","byte");
-	}
-      } else if( degraded == "int16byte" ){
-	for(int i=0;i<this->Ncurves;i++){
-	  std::string fname = prefix + std::to_string(i) + "_ib.bin";
-	  this->lightCurves[i].writeDegraded(fname,"int16","byte");
-	}
-      } else if( degraded == "int16int16" ){
-	for(int i=0;i<this->Ncurves;i++){
-	  std::string fname = prefix + std::to_string(i) + "_ii.bin";
-	  this->lightCurves[i].writeDegraded(fname,"int16","int16");
-	}
-      } else {
-	throw "Only allowed options for a degraded output with an irregularly sampled light curve are: 'bytebyte', 'int16byte', and 'int16int16'";
-      }
-    } catch(const char* msg){
-      std::cout << msg << std::endl;
-    }
+template<typename mType> void LightCurveCollection::writeCurvesDegraded(const std::string prefix){
+  for(int i=0;i<this->Ncurves;i++){
+    std::string suffix = prefix + std::to_string(i);
+    this->lightCurves[i].writeDegraded<mType>(suffix);
+  }
+}
+template<typename mType,typename tType> void LightCurveCollection::writeCurvesDegraded(const std::string prefix){
+  for(int i=0;i<this->Ncurves;i++){
+    std::string suffix = prefix + std::to_string(i);
+    this->lightCurves[i].writeDegraded<mType,tType>(suffix);
+  }
+}
+template<typename mType,typename tType,typename eType> void LightCurveCollection::writeCurvesDegraded(const std::string prefix){
+  for(int i=0;i<this->Ncurves;i++){
+    std::string suffix = prefix + std::to_string(i);
+    this->lightCurves[i].writeDegraded<mType,tType,eType>(suffix);
   }
 }
 
@@ -366,10 +347,81 @@ void LightCurve::writeData(const std::string filename){
   fclose(fh);
 }
 
-void LightCurve::writeDegraded(const std::string filename,std::string m_type){
+template<typename mType> void LightCurve::writeDegraded(const std::string suffix){
+  double m_min,m_max;
+  std::string filename = "comp_full_" + suffix + ".bin";
+  writeQuantity<mType>(filename,this->Nsamples,this->m,m_min,m_max);
 
+  std::string filename_params = "comp_para_" + suffix + ".dat";
+  double dt = this->t[1] - this->t[0];
+  FILE* fh = fopen(filename_params.data(),"w");
+  fprintf(fh,"%d\n",this->Nsamples);
+  fprintf(fh,"%s\n",typeid(mType).name());
+  fprintf(fh,"%f %f\n",m_min,m_max);
+  fprintf(fh,"%f\n",dt);
+  fclose(fh);
 }
 
-void LightCurve::writeDegraded(const std::string filename,std::string t_type,std::string m_type){
+template<typename mType,typename tType> void LightCurve::writeDegraded(const std::string suffix){
+  double m_min,m_max;
+  std::string filename_m = "comp_m_" + suffix + ".bin";
+  writeQuantity<mType>(filename_m,this->Nsamples,this->m,m_min,m_max);
 
+  double t_min,t_max;
+  std::string filename_t = "comp_t_" + suffix + ".bin";
+  writeQuantity<tType>(filename_t,this->Nsamples,this->t,t_min,t_max);
+
+  std::string filename_params = "comp_para_" + suffix + ".dat";
+  FILE* fh = fopen(filename_params.data(),"w");
+  fprintf(fh,"%d\n",this->Nsamples);
+  fprintf(fh,"%s %s\n",typeid(mType).name(),typeid(tType).name());
+  fprintf(fh,"%f %f\n",m_min,m_max);
+  fprintf(fh,"%f %f\n",t_min,t_max);
+  fclose(fh);
 }
+
+template<typename mType,typename tType,typename eType> void LightCurve::writeDegraded(const std::string suffix){
+  double m_min,m_max;
+  std::string filename_m = "comp_m_" + suffix + ".bin";
+  writeQuantity<mType>(filename_m,this->Nsamples,this->m,m_min,m_max);
+
+  double t_min,t_max;
+  std::string filename_t = "comp_t_" + suffix + ".bin";
+  writeQuantity<tType>(filename_t,this->Nsamples,this->t,t_min,t_max);
+
+  double e_min,e_max;
+  std::string filename_e = "comp_e_" + suffix + ".bin";
+  writeQuantity<eType>(filename_e,this->Nsamples,this->dm,e_min,e_max);
+
+  std::string filename_params = "comp_para_" + suffix + ".dat";
+  FILE* fh = fopen(filename_params.data(),"w");
+  fprintf(fh,"%d\n",this->Nsamples);
+  fprintf(fh,"%s %s\n",typeid(mType).name(),typeid(tType).name(),typeid(eType).name());
+  fprintf(fh,"%f %f\n",m_min,m_max);
+  fprintf(fh,"%f %f\n",t_min,t_max);
+  fprintf(fh,"%f %f\n",e_min,e_max);
+  fclose(fh);
+}
+
+template<typename qType> void LightCurve::writeQuantity(std::string filename,int Nq,double* q,double& q_min,double& q_max){
+  q_min = q[0];
+  q_max = q[0];
+  for(int i=0;i<Nq;i++){
+    if( q[i] > q_max ){
+      q_max = q[i];
+    }
+    if( q[i] < q_min ){
+      q_min = q[i];
+    }
+  }
+
+  std::ofstream out_bin(filename.data(),std::ios::out|std::ios::binary);
+  int dum;
+  double factor = (q_max-q_min)/((double) std::numeric_limits<qType>::max());
+  for(int i=0;i<Nq;i++){
+    dum = (int) floor( (q[i]-q_min)*factor);
+    out_bin.write((const char*) (&dum),sizeof(qType));
+  }
+  out_bin.close();
+}
+

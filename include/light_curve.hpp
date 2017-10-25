@@ -1,8 +1,6 @@
 #ifndef LIGHT_CURVE_HPP
 #define LIGHT_CURVE_HPP
 
-#include <cstdlib>
-#include <cmath>
 #include <string>
 #include <vector>
 
@@ -16,8 +14,10 @@ public:
   double* dm;
 
   void writeData(const std::string filename);
-  void writeDegraded(const std::string filename,std::string m_type);
-  void writeDegraded(const std::string filename,std::string t_type,std::string m_type);
+  template<typename mType> void writeDegraded(const std::string suffix);
+  template<typename mType,typename tType> void writeDegraded(const std::string suffix);
+  template<typename mType,typename tType,typename eType> void writeDegraded(const std::string suffix);
+  template<typename qType> void writeQuantity(std::string filename,int Nq,double* q,double& q_min,double& q_max);
 
  // add more functions doing statistics with light curves, maybe get wavelet spectrum, etc
 };
@@ -65,7 +65,9 @@ public:
 
   void writeLocations(const std::string filename);
   void writeCurves(const std::string prefix);
-  void writeCurvesDegraded(const std::string prefix,const std::string degraded); // 'degraded' can be byte, int16, bytebyte, int16byte, or int16int16.
+  template<typename mType> void writeCurvesDegraded(const std::string prefix); // mType can be 'unsigned char' or 'unsigned short int' (1 or 2 bytes long)
+  template<typename mType,typename tType> void writeCurvesDegraded(const std::string prefix); // mType and tType can be 'unsigned char' or 'unsigned short int'
+  template<typename mType,typename tType,typename eType> void writeCurvesDegraded(const std::string prefix); // mType, tType, and eType can be 'unsigned char' or 'unsigned short int'
 
 private:
   const double factor = 8.64*1.e-5; // conversion from [day*km/s] to [pixels]
