@@ -78,7 +78,7 @@ void LightCurveCollection::createVelocityLocations(int seed,double tmax,std::vec
   double len,lenx,leny,phi_rad;
 
   for(int i=0;i<this->Ncurves;i++){
-    len = tmax*v[i];
+    len = tmax*v[i]*this->vfactor/this->pixSizePhys; // has to be in pixel units
     phi_rad = phi[i]*d2r;
     lenx = len*cos(phi_rad);
     leny = len*sin(phi_rad);
@@ -86,10 +86,8 @@ void LightCurveCollection::createVelocityLocations(int seed,double tmax,std::vec
     while(true){
       A.x = drand48()*this->Nx;
       A.y = drand48()*this->Ny;
-    
       B.x = A.x + lenx;
       B.y = A.y + leny;
-      
       //Is the new end point still within the (effective) map?
       if ( (B.x < 0) || (B.x >= this->Nx) || (B.y < 0) || (B.y >= this->Ny) ){
 	//	printf("%5d%5d problem\n",(int)round(loc.xo),(int)round(loc.yo));
@@ -129,7 +127,7 @@ std::vector<int> LightCurveCollection::checkLengthFull(){
 std::vector<int> LightCurveCollection::checkLength(double v,double tmax){
   // all comparisons are made in pixels and the index of problematic light curves is returned
   std::vector<int> indices;
-  int lmax = floor(v*tmax*this->factor/this->pixSizePhys);
+  int lmax = floor(v*tmax*this->vfactor/this->pixSizePhys);
   for(int i=0;i<this->Ncurves;i++){
     int Dj = floor(this->B[i].x - this->A[i].x);
     int Di = floor(this->B[i].y - this->A[i].y);
@@ -143,7 +141,7 @@ std::vector<int> LightCurveCollection::checkLength(double v,double tmax){
 
 std::vector<int> LightCurveCollection::checkSampling(double v,double dt){
   std::vector<int> indices;
-  double dl = v*dt*this->factor/this->pixSizePhys;
+  double dl = v*dt*this->vfactor/this->pixSizePhys;
   for(int i=0;i<this->Ncurves;i++){
     int Dj = floor(this->B[i].x - this->A[i].x);
     int Di = floor(this->B[i].y - this->A[i].y);
@@ -164,7 +162,7 @@ std::vector<int> LightCurveCollection::checkSampling(double v,std::vector<double
 
     int j=0;
     for(j=0;j<t.size();j++){
-      double lj = v*t[j]*this->factor/this->pixSizePhys;
+      double lj = v*t[j]*this->vfactor/this->pixSizePhys;
       if( lj > Lmax ){
 	break;
       }
@@ -215,7 +213,7 @@ void LightCurveCollection::extractSampled(std::vector<double> v,double dt,double
     int Dj   = floor(this->B[i].x - this->A[i].x);
     int Di   = floor(this->B[i].y - this->A[i].y);
     int Lmax = floor(hypot(Di,Dj));
-    int dl   = v[i]*dt*this->factor/this->pixSizePhys;
+    int dl   = v[i]*dt*this->vfactor/this->pixSizePhys;
     int Nsamples = floor(Lmax/dl);
     double phi = atan2(Di,Dj);
 
@@ -250,7 +248,7 @@ void LightCurveCollection::extractStrategy(std::vector<double> v,std::vector<dou
 
     std::vector<double> length; 
     for(int j=0;j<t.size();j++){
-      double len = v[i]*t[j]*this->factor/this->pixSizePhys;
+      double len = v[i]*t[j]*this->vfactor/this->pixSizePhys;
       if( len <= Lmax ){
 	length.push_back(len);
       } else {
@@ -265,7 +263,8 @@ void LightCurveCollection::extractStrategy(std::vector<double> v,std::vector<dou
     this->lightCurves[i].dm = (double*) calloc(Nsamples,sizeof(double));
 
     for(int k=0;k<Nsamples;k++){
-      this->lightCurves[i].t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
+      //this->lightCurves[i].t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
+      this->lightCurves[i].t[k] = t[k]; // in [days]
     }
 
     sampleLightCurve(i,length,phi);
@@ -295,10 +294,10 @@ void LightCurveCollection::interpolatePlane(double xk,double yk,double& m,double
   double dy  = (double) fabs(i0 - yk);
   double ddx = (double) (1.0 - dx);
   double ddy = (double) (1.0 - dy);
-  double w00 = dx*dy;
-  double w10 = dy*ddx;
-  double w01 = dx*ddy;
-  double w11 = ddx*ddy;
+  double w00 = ddx*ddy;
+  double w10 = ddy*dx;
+  double w01 = ddx*dy;
+  double w11 = dx*dy;
 
   double f00 = this->emap->data[i0*this->emap->Nx+j0];
   double f10 = this->emap->data[i0*this->emap->Nx+j0+1];
@@ -314,47 +313,57 @@ void LightCurveCollection::interpolatePlane(double xk,double yk,double& m,double
 }
 
 
-void LightCurveCollection::writeCurves(const std::string prefix){
+void LightCurveCollection::writeCurves(const std::string path,const std::string suffix){
   for(int i=0;i<this->Ncurves;i++){
-    std::string fname = prefix + std::to_string(i) + ".dat";
-    this->lightCurves[i].writeData(fname);
+    std::string fname = suffix + std::to_string(i) + ".dat";
+    this->lightCurves[i].writeData(path,fname);
   }
 }
-template<typename mType> void LightCurveCollection::writeCurvesDegraded(const std::string prefix){
+template<typename mType> void LightCurveCollection::writeCurvesDegraded(const std::string path,const std::string suffix){
   for(int i=0;i<this->Ncurves;i++){
-    std::string suffix = prefix + std::to_string(i);
-    this->lightCurves[i].writeDegraded<mType>(suffix);
+    this->lightCurves[i].writeDegraded<mType>(path,suffix + std::to_string(i));
   }
 }
-template<typename mType,typename tType> void LightCurveCollection::writeCurvesDegraded(const std::string prefix){
+template<typename mType,typename tType> void LightCurveCollection::writeCurvesDegraded(const std::string path,const std::string suffix){
   for(int i=0;i<this->Ncurves;i++){
-    std::string suffix = prefix + std::to_string(i);
-    this->lightCurves[i].writeDegraded<mType,tType>(suffix);
+    this->lightCurves[i].writeDegraded<mType,tType>(path,suffix + std::to_string(i));
   }
 }
-template<typename mType,typename tType,typename eType> void LightCurveCollection::writeCurvesDegraded(const std::string prefix){
+template<typename mType,typename tType,typename eType> void LightCurveCollection::writeCurvesDegraded(const std::string path,const std::string suffix){
   for(int i=0;i<this->Ncurves;i++){
-    std::string suffix = prefix + std::to_string(i);
-    this->lightCurves[i].writeDegraded<mType,tType,eType>(suffix);
+    this->lightCurves[i].writeDegraded<mType,tType,eType>(path,suffix + std::to_string(i));
   }
 }
 
-void LightCurve::writeData(const std::string filename){
-  FILE* fh = fopen(filename.data(),"w");
+template void LightCurveCollection::writeCurvesDegraded<unsigned char>(const std::string path,const std::string suffix);
+template void LightCurveCollection::writeCurvesDegraded<unsigned short int>(const std::string path,const std::string suffix);
+
+template void LightCurveCollection::writeCurvesDegraded<unsigned char,unsigned char>(const std::string path,const std::string suffix);
+template void LightCurveCollection::writeCurvesDegraded<unsigned char,unsigned short int>(const std::string path,const std::string suffix);
+
+template void LightCurveCollection::writeCurvesDegraded<unsigned char,unsigned char,unsigned char>(const std::string path,const std::string suffix);
+template void LightCurveCollection::writeCurvesDegraded<unsigned char,unsigned short int,unsigned char>(const std::string path,const std::string suffix);
+
+
+
+
+void LightCurve::writeData(const std::string path,const std::string filename){
+  std::string full_file = path + filename;
+  FILE* fh = fopen(full_file.data(),"w");
   for(int i=0;i<this->Nsamples;i++){
     fprintf(fh,"%11.6e %11.6e %11.6e\n",this->t[i],this->m[i],this->dm[i]);
   }
   fclose(fh);
 }
 
-template<typename mType> void LightCurve::writeDegraded(const std::string suffix){
+template<typename mType> void LightCurve::writeDegraded(const std::string path,const std::string suffix){
   double m_min,m_max;
-  std::string filename = "comp_full_" + suffix + ".bin";
+  std::string filename = path + "comp_f_" + suffix + ".bin";
   writeQuantity<mType>(filename,this->Nsamples,this->m,m_min,m_max);
 
-  std::string filename_params = "comp_para_" + suffix + ".dat";
+  std::string filename_p = path + "comp_p_" + suffix + ".dat";
   double dt = this->t[1] - this->t[0];
-  FILE* fh = fopen(filename_params.data(),"w");
+  FILE* fh = fopen(filename_p.data(),"w");
   fprintf(fh,"%d\n",this->Nsamples);
   fprintf(fh,"%s\n",typeid(mType).name());
   fprintf(fh,"%f %f\n",m_min,m_max);
@@ -362,17 +371,17 @@ template<typename mType> void LightCurve::writeDegraded(const std::string suffix
   fclose(fh);
 }
 
-template<typename mType,typename tType> void LightCurve::writeDegraded(const std::string suffix){
+template<typename mType,typename tType> void LightCurve::writeDegraded(const std::string path,const std::string suffix){
   double m_min,m_max;
-  std::string filename_m = "comp_m_" + suffix + ".bin";
+  std::string filename_m = path + "comp_m_" + suffix + ".bin";
   writeQuantity<mType>(filename_m,this->Nsamples,this->m,m_min,m_max);
 
   double t_min,t_max;
-  std::string filename_t = "comp_t_" + suffix + ".bin";
+  std::string filename_t = path + "comp_t_" + suffix + ".bin";
   writeQuantity<tType>(filename_t,this->Nsamples,this->t,t_min,t_max);
 
-  std::string filename_params = "comp_para_" + suffix + ".dat";
-  FILE* fh = fopen(filename_params.data(),"w");
+  std::string filename_p = path + "comp_p_" + suffix + ".dat";
+  FILE* fh = fopen(filename_p.data(),"w");
   fprintf(fh,"%d\n",this->Nsamples);
   fprintf(fh,"%s %s\n",typeid(mType).name(),typeid(tType).name());
   fprintf(fh,"%f %f\n",m_min,m_max);
@@ -380,23 +389,23 @@ template<typename mType,typename tType> void LightCurve::writeDegraded(const std
   fclose(fh);
 }
 
-template<typename mType,typename tType,typename eType> void LightCurve::writeDegraded(const std::string suffix){
+template<typename mType,typename tType,typename eType> void LightCurve::writeDegraded(const std::string path,const std::string suffix){
   double m_min,m_max;
-  std::string filename_m = "comp_m_" + suffix + ".bin";
+  std::string filename_m = path + "comp_m_" + suffix + ".bin";
   writeQuantity<mType>(filename_m,this->Nsamples,this->m,m_min,m_max);
 
   double t_min,t_max;
-  std::string filename_t = "comp_t_" + suffix + ".bin";
+  std::string filename_t = path + "comp_t_" + suffix + ".bin";
   writeQuantity<tType>(filename_t,this->Nsamples,this->t,t_min,t_max);
 
   double e_min,e_max;
-  std::string filename_e = "comp_e_" + suffix + ".bin";
+  std::string filename_e = path + "comp_e_" + suffix + ".bin";
   writeQuantity<eType>(filename_e,this->Nsamples,this->dm,e_min,e_max);
 
-  std::string filename_params = "comp_para_" + suffix + ".dat";
-  FILE* fh = fopen(filename_params.data(),"w");
+  std::string filename_p = path + "comp_p_" + suffix + ".dat";
+  FILE* fh = fopen(filename_p.data(),"w");
   fprintf(fh,"%d\n",this->Nsamples);
-  fprintf(fh,"%s %s\n",typeid(mType).name(),typeid(tType).name(),typeid(eType).name());
+  fprintf(fh,"'%s' '%s' '%s'\n",typeid(mType).name(),typeid(tType).name(),typeid(eType).name());
   fprintf(fh,"%f %f\n",m_min,m_max);
   fprintf(fh,"%f %f\n",t_min,t_max);
   fprintf(fh,"%f %f\n",e_min,e_max);
@@ -424,4 +433,16 @@ template<typename qType> void LightCurve::writeQuantity(std::string filename,int
   }
   out_bin.close();
 }
+
+template void LightCurve::writeDegraded<unsigned char>(const std::string path,const std::string suffix);
+template void LightCurve::writeDegraded<unsigned short int>(const std::string path,const std::string suffix);
+
+template void LightCurve::writeDegraded<unsigned char,unsigned char>(const std::string path,const std::string suffix);
+template void LightCurve::writeDegraded<unsigned char,unsigned short int>(const std::string path,const std::string suffix);
+
+template void LightCurve::writeDegraded<unsigned char,unsigned char,unsigned char>(const std::string path,const std::string suffix);
+template void LightCurve::writeDegraded<unsigned char,unsigned short int,unsigned char>(const std::string path,const std::string suffix);
+
+template void LightCurve::writeQuantity<unsigned char>(std::string filename,int Nq,double* q,double& q_min,double& q_max);
+template void LightCurve::writeQuantity<unsigned short int>(std::string filename,int Nq,double* q,double& q_min,double& q_max);
 

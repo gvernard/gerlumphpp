@@ -13,10 +13,10 @@ public:
   double* m;
   double* dm;
 
-  void writeData(const std::string filename);
-  template<typename mType> void writeDegraded(const std::string suffix);
-  template<typename mType,typename tType> void writeDegraded(const std::string suffix);
-  template<typename mType,typename tType,typename eType> void writeDegraded(const std::string suffix);
+  void writeData(const std::string path,const std::string filename);
+  template<typename mType> void writeDegraded(const std::string path,const std::string suffix);
+  template<typename mType,typename tType> void writeDegraded(const std::string path,const std::string suffix);
+  template<typename mType,typename tType,typename eType> void writeDegraded(const std::string path,const std::string suffix);
   template<typename qType> void writeQuantity(std::string filename,int Nq,double* q,double& q_min,double& q_max);
 
  // add more functions doing statistics with light curves, maybe get wavelet spectrum, etc
@@ -35,6 +35,7 @@ public:
   int Ny; // height of the effective map from which the light curves will be exracted
   EffectiveMap* emap;
 
+  LightCurveCollection(){};
   LightCurveCollection(int Ncurves,EffectiveMap* emap);
   LightCurveCollection(const LightCurveCollection& other);
   ~LightCurveCollection(){
@@ -64,13 +65,13 @@ public:
   void extractStrategy(std::vector<double> v,std::vector<double> t);
 
   void writeLocations(const std::string filename);
-  void writeCurves(const std::string prefix);
-  template<typename mType> void writeCurvesDegraded(const std::string prefix); // mType can be 'unsigned char' or 'unsigned short int' (1 or 2 bytes long)
-  template<typename mType,typename tType> void writeCurvesDegraded(const std::string prefix); // mType and tType can be 'unsigned char' or 'unsigned short int'
-  template<typename mType,typename tType,typename eType> void writeCurvesDegraded(const std::string prefix); // mType, tType, and eType can be 'unsigned char' or 'unsigned short int'
+  void writeCurves(const std::string path,const std::string suffix);
+  template<typename mType> void writeCurvesDegraded(const std::string path,const std::string suffix);
+  template<typename mType,typename tType> void writeCurvesDegraded(const std::string path,const std::string suffix);
+  template<typename mType,typename tType,typename eType> void writeCurvesDegraded(const std::string path,const std::string suffix);
 
 private:
-  const double factor = 8.64*1.e-5; // conversion from [day*km/s] to [pixels]
+  const double vfactor = 8.64*1.e-5; // conversion from [km/s] to [10^14 cm / day]
   void sampleLightCurve(int index,std::vector<double> length,double phi);
   void interpolatePlane(double xk,double yk,double& m,double& dm);
 

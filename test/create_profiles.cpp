@@ -11,16 +11,17 @@ int main(int argc,char* argv[]){
 
 
   // Generic options
-  double pixSizePhys = 1; // in 10^14 cm
+  //double pixSizePhys = 1.32867; // in 10^14 cm
+  double pixSizePhys = 2.65734; // in 10^14 cm
   std::vector<double> lobs{365.49,480.03,622.2,754.06,868.21,992.5}; // observed wavelength in nm
-  double z_s = 1.5;
+  double z_s = 2.0;
 
   std::vector<double> lrest;
   for(int i=0;i<lobs.size();i++){
     lrest.push_back( lobs[i]/(1.0+z_s) );
   }
 
-  parsParametric pars{10,102.68,2.33}; // A parametric family of profiles (s0,l0,n)
+  parsParametric pars{25.9,102.68,2.33}; // A parametric family of profiles (s0,l0,n)
   //  parsSSdisc pars{0.01,0.3,0.1}; // An SS disc family of profiles (mbh,fedd,eta)
 
 

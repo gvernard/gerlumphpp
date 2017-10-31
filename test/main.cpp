@@ -94,20 +94,17 @@ int main(int argc,char* argv[]){
 
   // Extract full light curve
   acollection.extractFull();
-  acollection.writeCurves("lc_full_");
-  acollection.writeCurvesDegraded("lc_full_degraded_","byte");
+  acollection.writeCurves("","lc_full_");
 
   // Copy to a new object (without the extracted data) and extract regularly sampled light curve
   LightCurveCollection bcollection = acollection;
   bcollection.extractSampled(v,dt,tmax);
-  bcollection.writeCurves("lc_sampled_");
-  bcollection.writeCurvesDegraded("lc_sampled_degraded_","int16");
+  bcollection.writeCurves("","lc_sampled_");
 
   // Copy to a new object (without the extracted data) and extract sampled curve according to observing strategy
   LightCurveCollection ccollection = acollection;
   ccollection.extractStrategy(v,t_obs);
-  ccollection.writeCurves("lc_strategy_");
-  ccollection.writeCurvesDegraded("lc_strategy_degraded_","int16byte");
+  ccollection.writeCurves("","lc_strategy_");
 
 
 
