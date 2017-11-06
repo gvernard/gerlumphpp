@@ -26,6 +26,10 @@ LightCurveCollection::LightCurveCollection(const LightCurveCollection& other){
   }
   
   this->lightCurves = (LightCurve*) calloc(other.Ncurves,sizeof(LightCurve));
+  for(int i=0;i<this->Ncurves;i++){
+    LightCurve dum = other.lightCurves[i];
+    this->lightCurves[i] = dum;
+  }
   this->pixSizePhys = other.pixSizePhys;
   this->Nx = other.Nx;
   this->Ny = other.Ny;
@@ -241,9 +245,9 @@ void LightCurveCollection::extractStrategy(double v,std::vector<double> t){
 void LightCurveCollection::extractStrategy(std::vector<double> v,std::vector<double> t){
   this->type = "strategy";
   for(int i=0;i<this->Ncurves;i++){
-    int Dj   = floor(this->B[i].x - this->A[i].x);
-    int Di   = floor(this->B[i].y - this->A[i].y);
-    int Lmax = floor(hypot(Di,Dj));
+    int Dj   = ceil(this->B[i].x - this->A[i].x);
+    int Di   = ceil(this->B[i].y - this->A[i].y);
+    int Lmax = ceil(hypot(Di,Dj));
     double phi = atan2(Di,Dj);
 
     std::vector<double> length; 
@@ -343,9 +347,21 @@ template void LightCurveCollection::writeCurvesDegraded<unsigned char,unsigned s
 
 template void LightCurveCollection::writeCurvesDegraded<unsigned char,unsigned char,unsigned char>(const std::string path,const std::string suffix);
 template void LightCurveCollection::writeCurvesDegraded<unsigned char,unsigned short int,unsigned char>(const std::string path,const std::string suffix);
+template void LightCurveCollection::writeCurvesDegraded<unsigned short int,unsigned short int,unsigned short int>(const std::string path,const std::string suffix);
 
 
 
+LightCurve::LightCurve(const LightCurve& other){
+  this->Nsamples = other.Nsamples;
+  this->t  = (double*) malloc(this->Nsamples*sizeof(double));
+  this->m  = (double*) malloc(this->Nsamples*sizeof(double));
+  this->dm = (double*) malloc(this->Nsamples*sizeof(double));
+  for(int i=0;i<this->Nsamples;i++){
+    this->t[i]  = other.t[i];
+    this->m[i]  = other.m[i];
+    this->dm[i] = other.dm[i];
+  }
+}
 
 void LightCurve::writeData(const std::string path,const std::string filename){
   std::string full_file = path + filename;
@@ -442,6 +458,7 @@ template void LightCurve::writeDegraded<unsigned char,unsigned short int>(const 
 
 template void LightCurve::writeDegraded<unsigned char,unsigned char,unsigned char>(const std::string path,const std::string suffix);
 template void LightCurve::writeDegraded<unsigned char,unsigned short int,unsigned char>(const std::string path,const std::string suffix);
+template void LightCurve::writeDegraded<unsigned short int,unsigned short int,unsigned short int>(const std::string path,const std::string suffix);
 
 template void LightCurve::writeQuantity<unsigned char>(std::string filename,int Nq,double* q,double& q_min,double& q_max);
 template void LightCurve::writeQuantity<unsigned short int>(std::string filename,int Nq,double* q,double& q_min,double& q_max);

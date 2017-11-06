@@ -13,6 +13,13 @@ public:
   double* m;
   double* dm;
 
+  LightCurve(const LightCurve& other);
+  ~LightCurve(){
+    free(t);
+    free(m);
+    free(dm);
+  }
+
   void writeData(const std::string path,const std::string filename);
   template<typename mType> void writeDegraded(const std::string path,const std::string suffix);
   template<typename mType,typename tType> void writeDegraded(const std::string path,const std::string suffix);
@@ -39,11 +46,6 @@ public:
   LightCurveCollection(int Ncurves,EffectiveMap* emap);
   LightCurveCollection(const LightCurveCollection& other);
   ~LightCurveCollection(){
-    for(int i=0;i<Ncurves;i++){
-      free(lightCurves[i].t);
-      free(lightCurves[i].m);
-      free(lightCurves[i].dm);
-    }
     free(lightCurves);
     free(A);
     free(B);
