@@ -27,8 +27,7 @@ LightCurveCollection::LightCurveCollection(const LightCurveCollection& other){
   
   this->lightCurves = (LightCurve*) calloc(other.Ncurves,sizeof(LightCurve));
   for(int i=0;i<this->Ncurves;i++){
-    LightCurve dum = other.lightCurves[i];
-    this->lightCurves[i] = dum;
+    this->lightCurves[i] = other.lightCurves[i];
   }
   this->pixSizePhys = other.pixSizePhys;
   this->Nx = other.Nx;
@@ -417,7 +416,7 @@ template<typename mType,typename tType,typename eType> void LightCurve::writeDeg
   double e_min,e_max;
   std::string filename_e = path + "comp_e_" + suffix + ".bin";
   writeQuantity<eType>(filename_e,this->Nsamples,this->dm,e_min,e_max);
-
+  
   std::string filename_p = path + "comp_p_" + suffix + ".dat";
   FILE* fh = fopen(filename_p.data(),"w");
   fprintf(fh,"%d\n",this->Nsamples);
@@ -444,7 +443,7 @@ template<typename qType> void LightCurve::writeQuantity(std::string filename,int
   int dum;
   double factor = (q_max-q_min)/((double) std::numeric_limits<qType>::max());
   for(int i=0;i<Nq;i++){
-    dum = (int) floor( (q[i]-q_min)*factor);
+    dum = (int) floor( (q[i]-q_min)/factor );
     out_bin.write((const char*) (&dum),sizeof(qType));
   }
   out_bin.close();
