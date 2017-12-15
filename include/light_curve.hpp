@@ -40,10 +40,10 @@ public:
   double pixSizePhys;
   int Nx; // width of the effective map from which the light curves will be exracted
   int Ny; // height of the effective map from which the light curves will be exracted
-  EffectiveMap* emap;
+  MagnificationMap* emap;
 
   LightCurveCollection(){};
-  LightCurveCollection(int Ncurves,EffectiveMap* emap);
+  LightCurveCollection(int Ncurves,MagnificationMap* emap);
   LightCurveCollection(const LightCurveCollection& other);
   ~LightCurveCollection(){
     free(lightCurves);
@@ -51,7 +51,7 @@ public:
     free(B);
   }
 
-  void setEmap(EffectiveMap* emap);
+  void setEmap(MagnificationMap* emap);
   void createRandomLocations(int seed,int maxLen);
   void createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi);
 

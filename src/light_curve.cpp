@@ -4,7 +4,7 @@
 #include <cmath>
 #include <fstream>
 
-LightCurveCollection::LightCurveCollection(int Ncurves,EffectiveMap* emap){
+LightCurveCollection::LightCurveCollection(int Ncurves,MagnificationMap* emap){
   this->Ncurves = Ncurves;
   this->A = (point*) calloc(Ncurves,sizeof(point));
   this->B = (point*) calloc(Ncurves,sizeof(point));
@@ -35,7 +35,7 @@ LightCurveCollection::LightCurveCollection(const LightCurveCollection& other){
   this->emap = other.emap;
 }
 
-void LightCurveCollection::setEmap(EffectiveMap* emap){
+void LightCurveCollection::setEmap(MagnificationMap* emap){
   this->emap = emap;
 }
 

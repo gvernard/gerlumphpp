@@ -1,8 +1,20 @@
+# If not running on gstar, then one can specify the path to the maps by calling: make MAP_PATH=/path/to/maps/without/quotes/and/ending/with/slash/
+# To specify a different path you have to call "make clean" first.
+
 CC    = g++
 CUDA  = nvcc
 #CC_FLAGS = -std=c++11 -Wno-deprecated-gpu-targets # for a static library
 CC_FLAGS   = -std=c++11 -fPIC
 CUDA_FLAGS = -std=c++11 --compiler-options '-fPIC' -Wno-deprecated-gpu-targets # for a dynamic library
+
+ifdef MAP_PATH
+QUOTED_MAP_PATH = $(addprefix "\",$(addsuffix \"",$(MAP_PATH)))
+CC_FLAGS += -DMAP_PATH=$(QUOTED_MAP_PATH)
+CUDA_FLAGS += -DMAP_PATH=$(QUOTED_MAP_PATH)
+#$(info ${QUOTED_MAP_PATH})
+endif
+
+
 CC_LIBS    = -lpng -lCCfits
 CUDA_LIBS  = -lcuda -lcudart -lcufft
 INC   = -I include

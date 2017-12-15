@@ -1,6 +1,13 @@
 #ifndef MAGNIFICATION_MAP_HPP
 #define MAGNIFICATION_MAP_HPP
 
+#ifdef MAP_PATH
+  #define PATH MAP_PATH
+#else
+  #define PATH "/lustre/projects/p001_swin/gvernardos/DATABASES/gerlumph_db/"
+#endif
+
+
 #include <cstdlib>
 #include <string>
 #include <fstream>
@@ -46,7 +53,7 @@ public:
 
 
 private:
-  const std::string path = "/lustre/projects/p001_swin/gvernardos/DATABASES/gerlumph_db/";
+  const std::string path = PATH;
   //  const std::string path = "/data/users/gvernard/";
 
   void scaleMap(int* colors,int sampling);
