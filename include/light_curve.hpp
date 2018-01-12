@@ -46,6 +46,11 @@ public:
   LightCurveCollection(int Ncurves,MagnificationMap* emap);
   LightCurveCollection(const LightCurveCollection& other);
   ~LightCurveCollection(){
+    for(int i=0;i<this->Ncurves;i++){
+      free(lightCurves[i].t);
+      free(lightCurves[i].m);
+      free(lightCurves[i].dm);
+    }
     free(lightCurves);
     free(A);
     free(B);

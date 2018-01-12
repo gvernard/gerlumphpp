@@ -46,13 +46,13 @@ void LightCurveCollection::createRandomLocations(int seed,int maxLen){
   double ranx,rany,len;
 
   for(int i=0;i<this->Ncurves;i++){
-    A.x = drand48()*this->Nx;
-    A.y = drand48()*this->Ny;
+    A.x = drand48()*(this->Nx - 1);
+    A.y = drand48()*(this->Ny - 1);
     
     while(true){
       // point in a random direction within the map
-      ranx = drand48()*this->Nx;
-      rany = drand48()*this->Ny;
+      ranx = drand48()*(this->Nx - 1);
+      rany = drand48()*(this->Ny - 1);
       
       // set the actual length and end point for the light curve
       len = hypot((A.x-ranx),(A.y-rany));
