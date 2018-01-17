@@ -98,7 +98,7 @@ public:
   BaseProfile* createProfile(factoryProfilePars input){
     if( input.type == "parametric" ){
 
-      if( input.shape == "uniform_disc" ){
+      if( input.shape == "uniform" ){
 	return new UniformDisc(input.pixSizePhys,input.pars_parametric,input.lrest,input.incl,input.orient);
       } else if( input.shape == "gaussian" ){
 	return new Gaussian(input.pixSizePhys,input.pars_parametric,input.lrest,input.incl,input.orient);
@@ -108,7 +108,7 @@ public:
 
     } else if( input.type == "ss_disc" ){
       
-      if( input.shape == "uniform_disc" ){
+      if( input.shape == "uniform" ){
 	return new UniformDisc(input.pixSizePhys,input.pars_ssdisc,input.lrest,input.incl,input.orient);
       } else if( input.shape == "gaussian" ){
 	return new Gaussian(input.pixSizePhys,input.pars_ssdisc,input.lrest,input.incl,input.orient);
