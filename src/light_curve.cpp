@@ -8,7 +8,7 @@ LightCurveCollection::LightCurveCollection(int Ncurves,MagnificationMap* emap){
   this->Ncurves = Ncurves;
   this->A = (point*) calloc(Ncurves,sizeof(point));
   this->B = (point*) calloc(Ncurves,sizeof(point));
-  this->lightCurves = (LightCurve*) calloc(Ncurves,sizeof(LightCurve));
+  this->lightCurves = new LightCurve*[Ncurves];
   this->pixSizePhys = emap->pixSizePhys;
   this->Nx = emap->Nx;
   this->Ny = emap->Ny;
@@ -25,7 +25,7 @@ LightCurveCollection::LightCurveCollection(const LightCurveCollection& other){
     this->B[i] = other.B[i];
   }
   
-  this->lightCurves = (LightCurve*) calloc(other.Ncurves,sizeof(LightCurve));
+  this->lightCurves = new LightCurve*[Ncurves];
   for(int i=0;i<this->Ncurves;i++){
     this->lightCurves[i] = other.lightCurves[i];
   }
@@ -189,15 +189,12 @@ void LightCurveCollection::extractFull(){
     int Nsamples = Lmax;
     double phi = atan2(Di,Dj);
 
-    this->lightCurves[i].Nsamples = Nsamples;
-    this->lightCurves[i].t  = (double*) calloc(Nsamples,sizeof(double));
-    this->lightCurves[i].m  = (double*) calloc(Nsamples,sizeof(double));
-    this->lightCurves[i].dm = (double*) calloc(Nsamples,sizeof(double));
+    this->lightCurves[i] = new LightCurve(Nsamples);
 
     std::vector<double> length(Nsamples); // in pixels (but can be decimal number as well)
     for(int k=0;k<Nsamples;k++){
       length[k] = k;
-      this->lightCurves[i].t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
+      this->lightCurves[i]->t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
     }
 
     sampleLightCurve(i,length,phi);
@@ -220,15 +217,12 @@ void LightCurveCollection::extractSampled(std::vector<double> v,double dt,double
     int Nsamples = floor(Lmax/dl);
     double phi = atan2(Di,Dj);
 
-    this->lightCurves[i].Nsamples = Nsamples;
-    this->lightCurves[i].t  = (double*) calloc(Nsamples,sizeof(double));
-    this->lightCurves[i].m  = (double*) calloc(Nsamples,sizeof(double));
-    this->lightCurves[i].dm = (double*) calloc(Nsamples,sizeof(double));
+    this->lightCurves[i] = new LightCurve(Nsamples);
 
     std::vector<double> length(Nsamples); // in pixels (but can be decimal number as well)
     for(int k=0;k<Nsamples;k++){
       length[k] = k*dl;
-      this->lightCurves[i].t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
+      this->lightCurves[i]->t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
     }
 
     sampleLightCurve(i,length,phi);
@@ -260,14 +254,11 @@ void LightCurveCollection::extractStrategy(std::vector<double> v,std::vector<dou
     }
     int Nsamples = length.size();
 
-    this->lightCurves[i].Nsamples = Nsamples;
-    this->lightCurves[i].t  = (double*) calloc(Nsamples,sizeof(double));
-    this->lightCurves[i].m  = (double*) calloc(Nsamples,sizeof(double));
-    this->lightCurves[i].dm = (double*) calloc(Nsamples,sizeof(double));
+    this->lightCurves[i] = new LightCurve(Nsamples);
 
     for(int k=0;k<Nsamples;k++){
       //this->lightCurves[i].t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
-      this->lightCurves[i].t[k] = t[k]; // in [days]
+      this->lightCurves[i]->t[k] = t[k]; // in [days]
     }
 
     sampleLightCurve(i,length,phi);
@@ -284,8 +275,8 @@ void LightCurveCollection::sampleLightCurve(int index,std::vector<double> length
   
     interpolatePlane(xk,yk,m,dm);
     
-    this->lightCurves[index].m[k]  = m;
-    this->lightCurves[index].dm[k] = dm;
+    this->lightCurves[index]->m[k]  = m;
+    this->lightCurves[index]->dm[k] = dm;
   }
 }
 
@@ -319,22 +310,22 @@ void LightCurveCollection::interpolatePlane(double xk,double yk,double& m,double
 void LightCurveCollection::writeCurves(const std::string path,const std::string suffix){
   for(int i=0;i<this->Ncurves;i++){
     std::string fname = suffix + std::to_string(i) + ".dat";
-    this->lightCurves[i].writeData(path,fname);
+    this->lightCurves[i]->writeData(path,fname);
   }
 }
 template<typename mType> void LightCurveCollection::writeCurvesDegraded(const std::string path,const std::string suffix){
   for(int i=0;i<this->Ncurves;i++){
-    this->lightCurves[i].writeDegraded<mType>(path,suffix + std::to_string(i));
+    this->lightCurves[i]->writeDegraded<mType>(path,suffix + std::to_string(i));
   }
 }
 template<typename mType,typename tType> void LightCurveCollection::writeCurvesDegraded(const std::string path,const std::string suffix){
   for(int i=0;i<this->Ncurves;i++){
-    this->lightCurves[i].writeDegraded<mType,tType>(path,suffix + std::to_string(i));
+    this->lightCurves[i]->writeDegraded<mType,tType>(path,suffix + std::to_string(i));
   }
 }
 template<typename mType,typename tType,typename eType> void LightCurveCollection::writeCurvesDegraded(const std::string path,const std::string suffix){
   for(int i=0;i<this->Ncurves;i++){
-    this->lightCurves[i].writeDegraded<mType,tType,eType>(path,suffix + std::to_string(i));
+    this->lightCurves[i]->writeDegraded<mType,tType,eType>(path,suffix + std::to_string(i));
   }
 }
 
@@ -348,6 +339,14 @@ template void LightCurveCollection::writeCurvesDegraded<unsigned char,unsigned c
 template void LightCurveCollection::writeCurvesDegraded<unsigned char,unsigned short int,unsigned char>(const std::string path,const std::string suffix);
 template void LightCurveCollection::writeCurvesDegraded<unsigned short int,unsigned short int,unsigned short int>(const std::string path,const std::string suffix);
 
+
+
+LightCurve::LightCurve(int Nsamples){
+  this->Nsamples = Nsamples;
+  this->t  = (double*) calloc(this->Nsamples,sizeof(double));
+  this->m  = (double*) calloc(this->Nsamples,sizeof(double));
+  this->dm = (double*) calloc(this->Nsamples,sizeof(double));
+}
 
 
 LightCurve::LightCurve(const LightCurve& other){

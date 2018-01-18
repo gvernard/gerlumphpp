@@ -13,6 +13,9 @@ public:
   double* m;
   double* dm;
 
+
+  LightCurve(){};
+  LightCurve(int Nsamples);
   LightCurve(const LightCurve& other);
   ~LightCurve(){
     free(t);
@@ -36,7 +39,7 @@ public:
   std::string type;
   point* A; // initial location of the light curves in pixels
   point* B; // final location of the light curves in pixels
-  LightCurve* lightCurves;
+  LightCurve** lightCurves;
   double pixSizePhys;
   int Nx; // width of the effective map from which the light curves will be exracted
   int Ny; // height of the effective map from which the light curves will be exracted
@@ -46,12 +49,14 @@ public:
   LightCurveCollection(int Ncurves,MagnificationMap* emap);
   LightCurveCollection(const LightCurveCollection& other);
   ~LightCurveCollection(){
-    for(int i=0;i<this->Ncurves;i++){
-      free(lightCurves[i].t);
-      free(lightCurves[i].m);
-      free(lightCurves[i].dm);
-    }
-    free(lightCurves);
+    //    for(int i=0;i<this->Ncurves;i++){
+      //      delete lightCurves[i];
+    //      free(lightCurves[i].t);
+    //      free(lightCurves[i].m);
+    //      free(lightCurves[i].dm);
+    //    }
+    //    free(lightCurves);
+    delete[] lightCurves;
     free(A);
     free(B);
   }
