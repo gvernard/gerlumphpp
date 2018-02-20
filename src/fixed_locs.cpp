@@ -68,7 +68,7 @@ void FixedLocationCollection::createGridLocations(){
       }
     }
   } catch(const char* msg) {
-    std::cout << msg << std::endl;
+    std::cout << msg << " " << std::endl;
   }
 }
 

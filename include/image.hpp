@@ -22,6 +22,7 @@ public:
     free(data);
   };
 
+  void writeImageBIN(const std::string filename,int sampling);
   void writeImagePNG(const std::string filename,int sampling);
   void writeImageFITS(const std::string filename,int sampling);
 

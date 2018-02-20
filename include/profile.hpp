@@ -2,6 +2,7 @@
 #define PROFILE_HPP
 
 #include <string>
+#include <map>
 #include "image.hpp"
 
 struct parsSSdisc {
@@ -119,6 +120,44 @@ public:
     } else if( input.type == "custom" ){
 
       return new Custom(input.pixSizePhys,input.filename,input.profPixSizePhys,input.incl,input.orient);
+
+    } else {
+      return NULL;
+    }
+  }
+
+  BaseProfile* createProfileFromMap(std::map<std::string,std::string> input){
+    if( input["type"] == "parametric" ){
+      parsParametric pars;
+      pars.s0 = std::stof(input["s0"]);
+      pars.l0 = std::stof(input["l0"]);
+      pars.n  = std::stof(input["n"]);
+
+      if( input["shape"] == "uniform" ){
+	return new UniformDisc(std::stof(input["pixSizePhys"]),pars,std::stof(input["lrest"]),std::stof(input["incl"]),std::stof(input["orient"]));
+      } else if( input["shape"] == "gaussian" ){
+	return new Gaussian(std::stof(input["pixSizePhys"]),pars,std::stof(input["lrest"]),std::stof(input["incl"]),std::stof(input["orient"]));
+      } else {
+	return NULL;
+      }
+
+    } else if( input["type"] == "ss_disc" ){
+      parsSSdisc pars;
+      pars.mbh  = std::stof(input["mbh"]);
+      pars.eta  = std::stof(input["eta"]);
+      pars.fedd = std::stof(input["fedd"]);
+      
+      if( input["shape"] == "uniform" ){
+	return new UniformDisc(std::stof(input["pixSizePhys"]),pars,std::stof(input["lrest"]),std::stof(input["incl"]),std::stof(input["orient"]));
+      } else if( input["shape"] == "gaussian" ){
+	return new Gaussian(std::stof(input["pixSizePhys"]),pars,std::stof(input["lrest"]),std::stof(input["incl"]),std::stof(input["orient"]));
+      } else {
+	return NULL;
+      }
+
+    } else if( input["type"] == "custom" ){
+
+      return new Custom(std::stof(input["pixSizePhys"]),input["filename"],std::stof(input["profPixSizePhys"]),std::stof(input["incl"]),std::stof(input["orient"]));
 
     } else {
       return NULL;

@@ -1,5 +1,21 @@
 #include "image.hpp"
 
+void Image::writeImageBIN(const std::string filename,int sampling){
+  int nNx = (int) (this->Nx/sampling);
+  int nNy = (int) (this->Ny/sampling);
+
+  double dum = 0.0;
+  std::ofstream out_bin(filename,std::ios::out|std::ios::binary);
+  for(int i=0;i<this->Ny;i+=sampling){
+    for(int j=0;j<this->Nx;j+=sampling){
+      dum = this->data[i*this->Nx+j];
+      out_bin.write((const char*) (&dum),sizeof(double));
+    }
+  }
+  out_bin.close();
+}
+
+
 void Image::writeImageFITS(const std::string filename,int sampling){
   // read, sample, and scale map
   int nNx = (int) (this->Nx/sampling);
