@@ -73,6 +73,42 @@ void LightCurveCollection::createRandomLocations(int seed,int maxLen){
   }
 }
 
+void LightCurveCollection::createOrientedRandomLocations(int seed,int maxLen,double angle){
+  // "angle" is in degress measured counter-clockwise from the positive x-axis of the usual cartesian system.
+  // The shear on the maps is oriented along this positive x-axis.
+  srand48(seed);
+  point A;
+  point B;
+  double fac = 0.017453293; // degrees to radians
+  double angle_rad = angle*fac;
+  
+  for(int i=0;i<this->Ncurves;i++){
+ 
+    while(true){
+      // original starting point
+      A.x = drand48()*(this->Nx - 1);
+      A.y = drand48()*(this->Ny - 1);
+
+      // point in the given direction within the map
+      B.x = A.x + cos(angle_rad)*maxLen;
+      B.y = A.y + sin(angle_rad)*maxLen;
+      
+      //Is the new end point still within the (effective) map?
+      if ( (B.x < 0) || (B.x >= this->Nx) || (B.y < 0) || (B.y >= this->Ny) ){
+	//	printf("%5d%5d problem\n",(int)round(loc.xo),(int)round(loc.yo));
+	continue;
+      } else {
+	break;
+      }
+    }
+    
+    this->A[i] = A;
+    this->B[i] = B;
+  }
+}
+
+
+
 void LightCurveCollection::createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi){
   srand48(seed);
   double d2r = 0.017453; // degrees to radians

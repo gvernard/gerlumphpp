@@ -4,7 +4,8 @@
 #ifdef MAP_PATH
   #define PATH MAP_PATH
 #else
-  #define PATH "/lustre/projects/p001_swin/gvernardos/DATABASES/gerlumph_db/"
+  #define PATH "/nfs/cluster/cosmic/gvernardos/DATABASES/gerlumph_db/"
+//  #define PATH "/lustre/projects/p001_swin/gvernardos/DATABASES/gerlumph_db/"
 #endif
 
 

@@ -63,6 +63,7 @@ public:
 
   void setEmap(MagnificationMap* emap);
   void createRandomLocations(int seed,int maxLen);
+  void createOrientedRandomLocations(int seed,int maxLen,double angle);
   void createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi);
 
   std::vector<int> checkLengthFull();
