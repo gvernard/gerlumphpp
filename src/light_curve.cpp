@@ -43,7 +43,7 @@ void LightCurveCollection::createRandomLocations(int seed,int maxLen){
   srand48(seed);
   point A;
   point B;
-  double ranx,rany,len;
+  double ranx,rany,phi;
 
   for(int i=0;i<this->Ncurves;i++){
     A.x = drand48()*(this->Nx - 1);
@@ -55,9 +55,9 @@ void LightCurveCollection::createRandomLocations(int seed,int maxLen){
       rany = drand48()*(this->Ny - 1);
       
       // set the actual length and end point for the light curve
-      len = hypot((A.x-ranx),(A.y-rany));
-      B.x = A.x + (ranx-A.x)*maxLen/len;
-      B.y = A.y + (rany-A.y)*maxLen/len;
+      phi = atan2(rany-A.y,ranx-A.x);
+      B.x = A.x + cos(phi)*(maxLen);
+      B.y = A.y + sin(phi)*(maxLen);
       
       //Is the new end point still within the (effective) map?
       if ( (B.x < 0) || (B.x >= this->Nx) || (B.y < 0) || (B.y >= this->Ny) ){
@@ -217,20 +217,19 @@ std::vector<int> LightCurveCollection::checkSampling(double v,std::vector<double
 
 void LightCurveCollection::extractFull(){
   this->type = "full";
+  double dl  = this->pixSizePhys;
   for(int i=0;i<this->Ncurves;i++){
-    int Dj   = floor(this->B[i].x - this->A[i].x);
-    int Di   = floor(this->B[i].y - this->A[i].y);
-    int Lmax = floor(hypot(Di,Dj));
-    int dl   = 1;
-    int Nsamples = Lmax;
-    double phi = atan2(Di,Dj);
+    double Dx   = this->B[i].x - this->A[i].x;
+    double Dy   = this->B[i].y - this->A[i].y;
+    int Nsamples = floor(hypot(Dy,Dx)+0.5);
+    double phi = atan2(Dy,Dx);
 
     this->lightCurves[i] = new LightCurve(Nsamples);
 
     std::vector<double> length(Nsamples); // in pixels (but can be decimal number as well)
     for(int k=0;k<Nsamples;k++){
       length[k] = k;
-      this->lightCurves[i]->t[k] = length[k]*this->pixSizePhys; // in [10^14 cm]
+      this->lightCurves[i]->t[k] = length[k]*dl; // in [10^14 cm]
     }
 
     sampleLightCurve(i,length,phi);

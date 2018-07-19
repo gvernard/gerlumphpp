@@ -50,16 +50,11 @@ public:
   Mpd getFullMpd();
   Mpd getBinnedMpd(int Nbins);
   void convolve(Kernel* kernel,EffectiveMap* emap);
-  void writeMapPNG(const std::string filename,int sampling);
 
 
 private:
   const std::string path = PATH;
   //  const std::string path = "/data/users/gvernard/";
-
-  void scaleMap(int* colors,int sampling);
-  void readRGB(const std::string filename,int* rgb);
-  void writeImage(const std::string filename, int width,int height,int* cols,int* rgb);
 };
 
 
