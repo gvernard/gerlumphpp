@@ -2,65 +2,103 @@
 # To specify a different path you have to call "make clean" first.
 
 CC    = g++
-CUDA  = /usr/local/cuda-8.0/bin/nvcc
 #CC_FLAGS = -std=c++11 -Wno-deprecated-gpu-targets # for a static library
 CC_FLAGS   = -std=c++11 -fPIC
-CUDA_FLAGS = -std=c++11 --compiler-options '-fPIC' -Wno-deprecated-gpu-targets # for a dynamic library
-
-ifdef MAP_PATH
-#QUOTED_MAP_PATH = $(addprefix "\",$(addsuffix \"",$(MAP_PATH)))
-QUOTED_MAP_PATH = $(addprefix '",$(addsuffix "',$(MAP_PATH)))
-CC_FLAGS += -DMAP_PATH=$(QUOTED_MAP_PATH)
-CUDA_FLAGS += -DMAP_PATH=$(QUOTED_MAP_PATH)
-#$(info ${QUOTED_MAP_PATH})
-#$(info ${CC_FLAGS})
-endif
-
-
 CC_LIBS    = -lpng -lCCfits
-CUDA_LIBS  = -lcudart -lcufft
 INC   = -I include
+
+CUDA  = /usr/local/cuda-8.0/bin/nvcc
+CUDA_FLAGS = -std=c++11 --compiler-options '-fPIC' -Wno-deprecated-gpu-targets # for a dynamic library
+CUDA_LIBS  = -lcudart -lcufft
 
 SOURCE_DIR = src
 BUILD_DIR  = build
 HEADER_DIR = include
 
+SOURCES = image.cpp fixed_locs.cpp light_curve.cpp mpd.cpp profile.cpp velocities.cpp
+MAG_MAP = magnification_map.cpp
+GPU_SOURCES = gpu_functions.cu
+CPU_SOURCES = cpu_functions.cpp
 
-SOURCES = $(shell find $(SOURCE_DIR) -type f -name '*.cpp')
+
+ifdef MAP_PATH
+#QUOTED_MAP_PATH = $(addprefix "\",$(addsuffix \"",$(MAP_PATH)))
+QUOTED_MAP_PATH = $(addprefix '",$(addsuffix "',$(MAP_PATH)))
+MAP_PATH_FLAGS = -DMAP_PATH=$(QUOTED_MAP_PATH)
+#$(info ${QUOTED_MAP_PATH})
+endif
+DOMAIN := $(shell dnsdomainname)
+
+
+
+
+
+#SOURCES = $(shell find $(SOURCE_DIR) -type f -name '*.cpp')
 #OBJECTS = $(patsubst $(SOURCE_DIR)/%,$(BUILD_DIR)/%,$(SOURCES:.cpp=.o))
-SOURCES += $(shell find $(SOURCE_DIR) -type f -name '*.cu')
-TMP = $(patsubst $(SOURCE_DIR)/%,$(BUILD_DIR)/%,$(SOURCES:.cpp=.o))
-OBJECTS = $(TMP:.cu=.o)
+#SOURCES += $(shell find $(SOURCE_DIR) -type f -name '*.cu')
+
+PATH_SOURCES = $(patsubst %, $(SOURCE_DIR)/normal_source/%,$(SOURCES))
+PATH_SOURCES += $(SOURCE_DIR)/magmap/magnification_map.cpp
+TMP = $(patsubst $(SOURCE_DIR)/normal_source/%,$(BUILD_DIR)/%,$(PATH_SOURCES:.cpp=.o))
+OBJECTS = $(patsubst $(SOURCE_DIR)/magmap/%,$(BUILD_DIR)/%,$(TMP:.cpp=.o))
+
+PATH_GPU_SOURCES = $(patsubst %, $(SOURCE_DIR)/cpu_gpu/%,$(GPU_SOURCES))
+GPU_OBJECTS = $(patsubst $(SOURCE_DIR)/cpu_gpu/%,$(BUILD_DIR)/%,$(PATH_GPU_SOURCES:.cu=.o))
+
+PATH_CPU_SOURCES = $(patsubst %, $(SOURCE_DIR)/cpu_gpu/%,$(CPU_SOURCES))
+CPU_OBJECTS = $(patsubst $(SOURCE_DIR)/cpu_gpu/%,$(BUILD_DIR)/%,$(PATH_CPU_SOURCES:.cpp=.o))
+
 HEADERS = $(shell find $(HEADER_DIR) -type f -name '*.hpp')
 
-
-#$(info $$SOURCES is [${SOURCES}])
-#$(info $$HEADERS is [${HEADERS}])
+#$(info $$PATH_SOURCES is [${PATH_SOURCES}])
+#$(info $$PATH_GPU_SOURCES is [${PATH_GPU_SOURCES}])
+#$(info $$PATH_CPU_SOURCES is [${PATH_CPU_SOURCES}])
 #$(info $$OBJECTS is [${OBJECTS}])
+#$(info $$GPU_OBJECTS is [${GPU_OBJECTS}])
+#$(info $$CPU_OBJECTS is [${CPU_OBJECTS}])
+#$(info $$HEADERS is [${HEADERS}])
 
 
 
-DOMAIN := $(shell dnsdomainname)
-libgerlumph.so: $(OBJECTS) $(HEADERS)
-ifeq ($(DOMAIN),hpc.swin.edu.au)
-	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-7.5/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS)
-else
-	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-8.0/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS)
-endif
 
-
-build/magnification_map.o: src/magnification_map.cu $(HEADERS)
+# GPU PART
+$(BUILD_DIR)/gpu_functions.o: $(SOURCE_DIR)/cpu_gpu/gpu_functions.cu $(HEADERS)
 	$(CUDA) $(CUDA_FLAGS) $(CUDA_LIBS) $(INC) -c -o $@ $< 
 
-build/%.o: src/%.cpp $(HEADERS)
+# CPU PART
+$(BUILD_DIR)/cpu_functions.o: $(SOURCE_DIR)/cpu_gpu/cpu_functions.cpp $(HEADERS)
+	$(CC) $(CC_FLAGS) $(CC_LIBS) -lfftw3 $(INC) -c -o $@ $<
+
+# MAP PATH
+$(BUILD_DIR)/magnification_map.o: $(SOURCE_DIR)/magmap/magnification_map.cpp $(HEADERS)
+	$(CC) $(CC_FLAGS) $(CC_LIBS) $(INC) $(MAP_PATH_FLAGS) -c -o $@ $<
+
+# REST OF THE SOURCE CODE
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/normal_source/%.cpp $(HEADERS)
 	$(CC) $(CC_FLAGS) $(CC_LIBS) $(INC) -c -o $@ $< 
 
 
-test: libgerlumph.so
+
+gpu: $(OBJECTS) $(GPU_OBJECTS) $(HEADERS)
+ifeq ($(DOMAIN),hpc.swin.edu.au)
+	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-7.5/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS)
+else
+	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-8.0/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS)
+endif
+
+
+cpu: $(OBJECTS) $(CPU_OBJECTS) $(HEADERS)
+	g++ -shared -Wl,-soname,libgerlumph.so $(CC_LIBS) -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS)
+
+
+
+
+
+#test: libgerlumph.so
 #	$(CC) test/read_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/read
 #	$(CC) test/compare_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/compare
-	$(CC) test/main.cpp $(CC_FLAGS) -I include -L lib -lgerlumph -o bin/main
-	$(CC) test/create_profiles.cpp $(CC_FLAGS) -I include -L lib -lgerlumph -o bin/create
+#	$(CC) test/main.cpp $(CC_FLAGS) -I include -L lib -lgerlumph -o bin/main
+#	$(CC) test/create_profiles.cpp $(CC_FLAGS) -I include -L lib -lgerlumph -o bin/create
 
 
 clean:	
