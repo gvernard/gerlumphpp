@@ -67,7 +67,11 @@ $(BUILD_DIR)/gpu_functions.o: $(SOURCE_DIR)/cpu_gpu/gpu_functions.cu $(HEADERS)
 
 # CPU PART
 $(BUILD_DIR)/cpu_functions.o: $(SOURCE_DIR)/cpu_gpu/cpu_functions.cpp $(HEADERS)
+ifeq ($(DOMAIN),hpc.swin.edu.au)
+	$(CC) $(CC_FLAGS) $(CC_LIBS) -I/home/gvernard/myLibraries/fftw/include -lfftw3 $(INC) -c -o $@ $<
+else
 	$(CC) $(CC_FLAGS) $(CC_LIBS) -lfftw3 $(INC) -c -o $@ $<
+endif
 
 # MAP PATH
 $(BUILD_DIR)/magnification_map.o: $(SOURCE_DIR)/magmap/magnification_map.cpp $(HEADERS)
@@ -88,13 +92,22 @@ endif
 
 
 cpu: $(OBJECTS) $(CPU_OBJECTS) $(HEADERS)
-	g++ -shared -Wl,-soname,libgerlumph.so $(CC_LIBS) -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS)
+ifeq ($(DOMAIN),hpc.swin.edu.au)
+	g++ -shared -Wl,-soname,libgerlumph.so -I/home/gvernard/myLibraries/fftw/include -L/home/gvernard/myLibraries/fftw/lib $(CC_LIBS) -lfftw3 -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS)
+else
+	g++ -shared -Wl,-soname,libgerlumph.so $(CC_LIBS) -lfftw3 -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS)
+endif
 
 
 
 
 
-#test: libgerlumph.so
+test_gpu: gpu
+	$(CC) -std=c++11 -I include -L lib -lgerlumph -o bin/readMap test/readMap.cpp
+
+
+test_cpu: cpu
+	$(CC) -std=c++11 -I include -L lib -lgerlumph -o bin/readMap test/readMap.cpp
 #	$(CC) test/read_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/read
 #	$(CC) test/compare_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/compare
 #	$(CC) test/main.cpp $(CC_FLAGS) -I include -L lib -lgerlumph -o bin/main

@@ -23,7 +23,7 @@ void MagnificationMap::convolve(Kernel* kernel,EffectiveMap* emap){
   cufftDoubleReal dum1,dum2;
   
   // Check if "kernel", which is a "profile" variable has the same dimension as the map
-
+  
   //Fourier transform map
   cufftDoubleComplex* Fmap = (cufftDoubleComplex*) calloc(this->Nx*(this->Ny/2+1),sizeof(cufftDoubleComplex));
   myfft2d_r2c(this->Nx,this->Ny,this->data,Fmap);
