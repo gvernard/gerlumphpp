@@ -1,15 +1,20 @@
 # If not running on gstar, then one can specify the path to the maps by calling: make MAP_PATH=/path/to/maps/without/quotes/and/ending/with/slash/
 # To specify a different path you have to call "make clean" first.
 
+# Prerequisites: CCfits, libpng, cuda, fftw
+# The relevant lib and include directories must be in the corresponding environment path variables
+
 CC    = g++
 #CC_FLAGS = -std=c++11 -Wno-deprecated-gpu-targets # for a static library
 CC_FLAGS   = -std=c++11 -fPIC
 CC_LIBS    = -lpng -lCCfits
 INC   = -I include
 
+
 CUDA  = /usr/local/cuda-8.0/bin/nvcc
 CUDA_FLAGS = -std=c++11 --compiler-options '-fPIC' -Wno-deprecated-gpu-targets # for a dynamic library
 CUDA_LIBS  = -lcudart -lcufft
+CUDA_PATH  = /usr/local/cuda-8.0/lib64
 
 SOURCE_DIR = src
 BUILD_DIR  = build
@@ -68,7 +73,7 @@ $(BUILD_DIR)/gpu_functions.o: $(SOURCE_DIR)/cpu_gpu/gpu_functions.cu $(HEADERS)
 # CPU PART
 $(BUILD_DIR)/cpu_functions.o: $(SOURCE_DIR)/cpu_gpu/cpu_functions.cpp $(HEADERS)
 ifeq ($(DOMAIN),hpc.swin.edu.au)
-	$(CC) $(CC_FLAGS) $(CC_LIBS) -I/home/gvernard/myLibraries/fftw/include -lfftw3 $(INC) -c -o $@ $<
+	$(CC) $(CC_FLAGS) $(CC_LIBS) -lfftw3 $(INC) -c -o $@ $<
 else
 	$(CC) $(CC_FLAGS) $(CC_LIBS) -lfftw3 $(INC) -c -o $@ $<
 endif
@@ -85,17 +90,17 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/normal_source/%.cpp $(HEADERS)
 
 gpu: $(OBJECTS) $(GPU_OBJECTS) $(HEADERS)
 ifeq ($(DOMAIN),hpc.swin.edu.au)
-	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-7.5/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS)
+	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-7.5/lib64 -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS) $(CC_LIBS) $(CUDA_LIBS) 
 else
-	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-8.0/lib64 $(CC_LIBS) $(CUDA_LIBS) -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS)
+	g++ -shared -Wl,-soname,libgerlumph.so -L$(CUDA_PATH) -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS) $(CC_LIBS) $(CUDA_LIBS)
 endif
 
 
 cpu: $(OBJECTS) $(CPU_OBJECTS) $(HEADERS)
 ifeq ($(DOMAIN),hpc.swin.edu.au)
-	g++ -shared -Wl,-soname,libgerlumph.so -I/home/gvernard/myLibraries/fftw/include -L/home/gvernard/myLibraries/fftw/lib $(CC_LIBS) -lfftw3 -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS)
+	g++ -shared -Wl,-soname,libgerlumph.so -L/mnt/home/gvernard/myLibraries/fftw/lib -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS) $(CC_LIBS) -lfftw3 
 else
-	g++ -shared -Wl,-soname,libgerlumph.so $(CC_LIBS) -lfftw3 -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS)
+	g++ -shared -Wl,-soname,libgerlumph.so -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS) $(CC_LIBS) -lfftw3
 endif
 
 
