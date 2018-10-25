@@ -45,6 +45,7 @@ public:
   BaseProfile(double pixSizePhys,double incl,double orient);
   BaseProfile(const BaseProfile& other);
   virtual void generateValues() = 0;
+  virtual double getHalfRadius() = 0;
   double sizeParametric(parsParametric pars,double lrest);
   double sizeSS(parsSSdisc pars,double lrest);
 protected:
@@ -62,16 +63,50 @@ public:
   UniformDisc(double pixSizePhys,parsParametric pars,double lrest,double incl,double orient);
   UniformDisc(double pixSizePhys,parsSSdisc pars,double lrest,double incl,double orient);
   void generateValues();
+  double getHalfRadius();
 };
 
 //////////////////////// CLASS DEFINITION: Gaussian ////////////////////////
 class Gaussian : public BaseProfile {
 public:
-  double R; // this is equal to sdev, in [10^14 cm]
-  Gaussian(double pixSizePhys,double R,double incl,double orient);
+  double sdev; // this is equal to sdev, in [10^14 cm]
+  Gaussian(double pixSizePhys,double sdev,double incl,double orient);
   Gaussian(double pixSizePhys,parsParametric pars,double lrest,double incl,double orient);
   Gaussian(double pixSizePhys,parsSSdisc pars,double lrest,double incl,double orient);
   void generateValues();
+  double getHalfRadius();
+};
+
+//////////////////////// CLASS DEFINITION: GaussianHole ////////////////////////
+class GaussianHole : public BaseProfile {
+public:
+  double sdev; // this is equal to sdev, in [10^14 cm]
+  double Rin;  // same units as sdev
+  GaussianHole(double pixSizePhys,double sdev,double Rin,double incl,double orient);
+  GaussianHole(double pixSizePhys,parsParametric pars,double lrest,double Rin,double incl,double orient);
+  GaussianHole(double pixSizePhys,parsSSdisc pars,double lrest,double Rin,double incl,double orient);
+  void generateValues();
+  double getHalfRadius();
+};
+
+//////////////////////// CLASS DEFINITION: ThermalHole ////////////////////////
+class ThermalHole : public BaseProfile {
+public:
+  double Rin; // in [10^14 cm]
+  ThermalHole(double pixSizePhys,double Rin,double incl,double orient);
+  void generateValues();
+  double getHalfRadius();
+};
+
+//////////////////////// CLASS DEFINITION: Wavy ////////////////////////
+class Wavy : public BaseProfile {
+public:
+  double a;
+  double b;
+  int node;
+  Wavy(double pixSizePhys,double a,double b,double incl,double orient);
+  void generateValues();
+  double getHalfRadius();
 };
 
 //////////////////////// CLASS DEFINITION: Custom ////////////////////////
@@ -79,6 +114,9 @@ class Custom : public BaseProfile {
 public:
   Custom(double pixSizePhys,const std::string filename,double profPixSizePhys,double incl,double orient);
   void generateValues(){};
+  double getHalfRadius(){
+    return 0.0;
+  };
 private:
   void interpolateProfile(int Nxx,int Nyy,double* input,double profPixSizePhys);
   void binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys);

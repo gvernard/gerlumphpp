@@ -7,6 +7,7 @@
 #include <CCfits/CCfits>
 
 
+
 //////////////////////// CLASS IMPLEMENTATION: BaseProfile ////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 BaseProfile::BaseProfile(double pixSizePhys,double incl,double orient){
@@ -62,6 +63,7 @@ void BaseProfile::makeEven(int& N){
 }
 
 
+
 //////////////////////// CLASS IMPLEMENTATION: UniformDisc ////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 UniformDisc::UniformDisc(double pixSizePhys,double R,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
@@ -78,6 +80,9 @@ UniformDisc::UniformDisc(double pixSizePhys,parsSSdisc pars,double lrest,double 
   this->R = sizeSS(pars,lrest);
   generateValues();
   normalize();
+}
+double UniformDisc::getHalfRadius(){
+  return 0.707*this->R;
 }
 void UniformDisc::generateValues(){
   this->Nx = 2 * (3+(int) ceil(this->R/this->pixSizePhys)); // x2 the disc radius + 3 pixels
@@ -103,33 +108,38 @@ void UniformDisc::generateValues(){
 }
 
 
+
 //////////////////////// CLASS IMPLEMENTATION: Gaussian ////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Gaussian::Gaussian(double pixSizePhys,double R,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  this->R = R;
+Gaussian::Gaussian(double pixSizePhys,double sdev,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->sdev = sdev;
   generateValues();
   normalize();
 }
 Gaussian::Gaussian(double pixSizePhys,parsParametric pars,double lrest,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  this->R = sizeParametric(pars,lrest);
+  this->sdev = sizeParametric(pars,lrest);
   generateValues();
   normalize();
 }
 Gaussian::Gaussian(double pixSizePhys,parsSSdisc pars,double lrest,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  this->R = sizeSS(pars,lrest);
+  this->sdev = sizeSS(pars,lrest);
   generateValues();
   normalize();
 }
+double Gaussian::getHalfRadius(){
+  return 1.18*this->sdev;
+}
 void Gaussian::generateValues(){
-  this->Nx = (int) ceil(4.72*this->R/this->pixSizePhys); // width is equal to x4 the half light radius
-  this->Ny = (int) ceil(4.72*this->R/this->pixSizePhys); // height is equal to x4 the half light radius
+  double Rhalf = this->getHalfRadius();
+  this->Nx = (int) ceil(4.0*Rhalf/this->pixSizePhys); // width is equal to x4 the half light radius
+  this->Ny = (int) ceil(4.0*Rhalf/this->pixSizePhys); // height is equal to x4 the half light radius
   makeEven(this->Nx);
   makeEven(this->Ny);
   this->data  = (double*) calloc(this->Nx*this->Ny,sizeof(double));
   this->width  = this->pixSizePhys*this->Nx;
   this->height = this->pixSizePhys*this->Ny;
 
-  double s = 2*pow(this->R,2);
+  double s = 2*pow(this->sdev,2);
   for(int i=0;i<this->Ny;i++){
     double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
     for(int j=0;j<this->Nx;j++){
@@ -138,6 +148,127 @@ void Gaussian::generateValues(){
     }
   }
 }
+
+
+
+//////////////////////// CLASS IMPLEMENTATION: GaussianHole //////////////////
+//////////////////////////////////////////////////////////////////////////////
+GaussianHole::GaussianHole(double pixSizePhys,double sdev,double Rin,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->sdev = sdev;
+  this->Rin = Rin;
+  generateValues();
+  normalize();
+}
+GaussianHole::GaussianHole(double pixSizePhys,parsParametric pars,double lrest,double Rin,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->sdev = sizeParametric(pars,lrest);
+  this->Rin = Rin;
+  generateValues();
+  normalize();
+}
+GaussianHole::GaussianHole(double pixSizePhys,parsSSdisc pars,double lrest,double Rin,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->sdev = sizeSS(pars,lrest);
+  this->Rin = Rin;
+  generateValues();
+  normalize();
+}
+double GaussianHole::getHalfRadius(){
+  double dum = 2.0*log(2.0)*pow(this->sdev,2.0) + pow(this->Rin,2.0);
+  return sqrt(dum);
+}
+void GaussianHole::generateValues(){
+  double Rhalf = this->getHalfRadius();
+  this->Nx = (int) ceil(4.0*Rhalf/this->pixSizePhys); // width is equal to x4 the half light radius
+  this->Ny = (int) ceil(4.0*Rhalf/this->pixSizePhys); // height is equal to x4 the half light radius
+  makeEven(this->Nx);
+  makeEven(this->Ny);
+  this->data  = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width  = this->pixSizePhys*this->Nx;
+  this->height = this->pixSizePhys*this->Ny;
+
+  double s = 2*pow(this->sdev,2);
+  for(int i=0;i<this->Ny;i++){
+    double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+    for(int j=0;j<this->Nx;j++){
+      double x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+      double r = hypot(x,y);
+      if( r < this->Rin ){
+	this->data[i*this->Nx+j] = 0.0;
+      } else {
+	this->data[i*this->Nx+j] = exp(-r*r/s);
+      }
+    }
+  }
+}
+
+//////////////////////// CLASS IMPLEMENTATION: ThermalHole /////////////////////
+////////////////////////////////////////////////////////////////////////////////
+ThermalHole::ThermalHole(double pixSizePhys,double Rin,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->Rin = Rin;
+  generateValues();
+  normalize();
+}
+double ThermalHole::getHalfRadius(){
+  return 4.0*this->Rin;
+}
+void ThermalHole::generateValues(){
+  double Rhalf = this->getHalfRadius();
+  this->Nx = (int) ceil(4.0*Rhalf/this->pixSizePhys); // width is equal to x4 the half light radius
+  this->Ny = (int) ceil(4.0*Rhalf/this->pixSizePhys); // height is equal to x4 the half light radius
+  makeEven(this->Nx);
+  makeEven(this->Ny);
+  this->data  = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width  = this->pixSizePhys*this->Nx;
+  this->height = this->pixSizePhys*this->Ny;
+
+  double fac = 3.0*this->Rin/(2.0*M_PI);
+  for(int i=0;i<this->Ny;i++){
+    double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+    for(int j=0;j<this->Nx;j++){
+      double x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+      double r = hypot(x,y);
+      if( r < this->Rin ){
+	this->data[i*this->Nx+j] = 0.0;
+      } else {
+	this->data[i*this->Nx+j] = (1.0 - sqrt(this->Rin/r))*fac/pow(r,3.0);
+      }
+    }
+  }
+}
+
+//////////////////////// CLASS IMPLEMENTATION: Wavy ////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Wavy::Wavy(double pixSizePhys,double a,double b,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->a = a;
+  this->b = b;
+  this->node = 3; // the profile extends to the 3rd node of the sine wave.
+  generateValues();
+  normalize();
+}
+double Wavy::getHalfRadius(){
+  return this->node*M_PI/(2.0*this->b);
+}
+void Wavy::generateValues(){
+  double Rhalf = this->getHalfRadius();
+  this->Nx = (int) ceil(4.0*Rhalf/this->pixSizePhys); // width is equal to x4 the half light radius
+  this->Ny = (int) ceil(4.0*Rhalf/this->pixSizePhys); // height is equal to x4 the half light radius
+  makeEven(this->Nx);
+  makeEven(this->Ny);
+  this->data  = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width  = this->pixSizePhys*this->Nx;
+  this->height = this->pixSizePhys*this->Ny;
+
+  for(int i=0;i<this->Ny;i++){
+    double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+    for(int j=0;j<this->Nx;j++){
+      double x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+      double r = hypot(x,y);
+      if( r < 2*Rhalf ){
+	this->data[i*this->Nx+j] = pow(sin(this->b*r),2)/(this->a*r);
+      }
+    }
+  }
+}
+
 
 
 //////////////////////// CLASS IMPLEMENTATION: Custom ////////////////////////
