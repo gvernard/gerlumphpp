@@ -50,6 +50,8 @@ public:
   double sizeSS(parsSSdisc pars,double lrest);
 protected:
   void makeEven(int& N);
+  void createGrid(double* x,double* y);
+  void project(int N,double* x,double* y);
   void normalize();
   // check functions here (larger than a map,smaller than a pixel)
   // projection functions here

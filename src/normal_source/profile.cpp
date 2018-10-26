@@ -39,6 +39,38 @@ double BaseProfile::sizeSS(parsSSdisc pars,double lrest){
   double c = pars.fedd/pars.eta;
   double r = 0.0097*pow(a*b*c,1.0/3.0); // in [10^14 cm]
 }
+void BaseProfile::project(int N,double* x,double* y){
+  double fac = M_PI/180.0; // degrees to radians conversion
+  double costheta = cos(fac*this->incl); // cos(incl)
+  // orientation happens clockwise around the z axis, so I have to add pi/2 and change sign to have it from x-axis counter-clockwise
+  double cosphi = cos(fac*(-this->orient)); // cos(orient) 
+  double sinphi = sin(fac*(-this->orient)); // sin(orient)
+
+  double newx,newy;
+  for(int i=0;i<N;i++){
+    //    newx = costheta*cosphi*x[i] - sinphi*y[i];
+    //    newy = costheta*sinphi*x[i] + cosphi*y[i];
+    newx = x[i]*cosphi/costheta + y[i]*sinphi/costheta;
+    newy = -sinphi*x[i] + cosphi*y[i];
+    x[i] = newx;
+    y[i] = newy;
+  }
+}
+void BaseProfile::createGrid(double* x,double* y){
+  // Nx and Ny must be set beforehand
+  // first create the orthogonal x,y grid of the image
+  double dumx,dumy;
+  for(int i=0;i<this->Ny;i++){
+    dumy = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+    for(int j=0;j<this->Nx;j++){
+      dumx = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
+      x[i*this->Nx+j] = dumx;
+      y[i*this->Nx+j] = dumy;
+    }
+  }
+  // then rotate the x,y grid according to the inclination and orientation angles
+  this->project(this->Nx*this->Ny,x,y);
+}
 void BaseProfile::normalize(){
   double sum = 0.;
   for(int i=0;i<this->Ny;i++){
@@ -93,18 +125,23 @@ void UniformDisc::generateValues(){
   this->width  = this->pixSizePhys*this->Nx;
   this->height = this->pixSizePhys*this->Ny;
 
-  for(int i=0;i<this->Ny;i++){
-    double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-    for(int j=0;j<this->Nx;j++){
-      double x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-      double r = hypot(x,y);
-      if( r < this->R ){
-	this->data[i*this->Nx+j] = 1.0;
-      } else {
-	this->data[i*this->Nx+j] = 0.0;
-      }
+  // create x,y grid
+  double* x = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  double* y = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  this->createGrid(x,y);
+
+  // set the values
+  for(int i=0;i<this->Nx*this->Ny;i++){
+    double r = hypot(x[i],y[i]);
+    if( r < this->R ){
+      this->data[i] = 1.0;
+    } else {
+      this->data[i] = 0.0;
     }
   }
+
+  free(x);
+  free(y);
 }
 
 
@@ -139,14 +176,20 @@ void Gaussian::generateValues(){
   this->width  = this->pixSizePhys*this->Nx;
   this->height = this->pixSizePhys*this->Ny;
 
+  // create x,y grid
+  double* x = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  double* y = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  this->createGrid(x,y);
+
+  // set the values
   double s = 2*pow(this->sdev,2);
-  for(int i=0;i<this->Ny;i++){
-    double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-    for(int j=0;j<this->Nx;j++){
-      double x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-      this->data[i*this->Nx+j] = exp(-x*x/s-y*y/s);
-    }
+  for(int i=0;i<this->Nx*this->Ny;i++){
+    double r = hypot(x[i],y[i]);
+    this->data[i] = exp(-r*r/s);
   }
+
+  free(x);
+  free(y);
 }
 
 
@@ -185,19 +228,24 @@ void GaussianHole::generateValues(){
   this->width  = this->pixSizePhys*this->Nx;
   this->height = this->pixSizePhys*this->Ny;
 
+  // create x,y grid
+  double* x = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  double* y = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  this->createGrid(x,y);
+
+  // set the values
   double s = 2*pow(this->sdev,2);
-  for(int i=0;i<this->Ny;i++){
-    double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-    for(int j=0;j<this->Nx;j++){
-      double x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-      double r = hypot(x,y);
-      if( r < this->Rin ){
-	this->data[i*this->Nx+j] = 0.0;
-      } else {
-	this->data[i*this->Nx+j] = exp(-r*r/s);
-      }
+  for(int i=0;i<this->Nx*this->Ny;i++){
+    double r = hypot(x[i],y[i]);
+    if( r < this->Rin ){
+      this->data[i] = 0.0;
+    } else {
+      this->data[i] = exp(-r*r/s);
     }
   }
+
+  free(x);
+  free(y);
 }
 
 //////////////////////// CLASS IMPLEMENTATION: ThermalHole /////////////////////
@@ -220,19 +268,24 @@ void ThermalHole::generateValues(){
   this->width  = this->pixSizePhys*this->Nx;
   this->height = this->pixSizePhys*this->Ny;
 
+  // create x,y grid
+  double* x = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  double* y = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  this->createGrid(x,y);
+
+  // set the values
   double fac = 3.0*this->Rin/(2.0*M_PI);
-  for(int i=0;i<this->Ny;i++){
-    double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-    for(int j=0;j<this->Nx;j++){
-      double x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-      double r = hypot(x,y);
-      if( r < this->Rin ){
-	this->data[i*this->Nx+j] = 0.0;
-      } else {
-	this->data[i*this->Nx+j] = (1.0 - sqrt(this->Rin/r))*fac/pow(r,3.0);
-      }
+  for(int i=0;i<this->Nx*this->Ny;i++){
+    double r = hypot(x[i],y[i]);
+    if( r > this->Rin ){
+      this->data[i] = (1.0 - sqrt(this->Rin/r))*fac/pow(r,3.0);
+    } else {
+      this->data[i] = 0.0;
     }
   }
+
+  free(x);
+  free(y);
 }
 
 //////////////////////// CLASS IMPLEMENTATION: Wavy ////////////////////////////
@@ -257,16 +310,23 @@ void Wavy::generateValues(){
   this->width  = this->pixSizePhys*this->Nx;
   this->height = this->pixSizePhys*this->Ny;
 
-  for(int i=0;i<this->Ny;i++){
-    double y = (i - this->Ny/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-    for(int j=0;j<this->Nx;j++){
-      double x = (j - this->Nx/2)*this->pixSizePhys + this->pixSizePhys/2.0;
-      double r = hypot(x,y);
-      if( r < 2*Rhalf ){
-	this->data[i*this->Nx+j] = pow(sin(this->b*r),2)/(this->a*r);
-      }
+  // create x,y grid
+  double* x = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  double* y = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  this->createGrid(x,y);
+
+  // set the values
+  for(int i=0;i<this->Nx*this->Ny;i++){
+    double r = hypot(x[i],y[i]);
+    if( r < 2*Rhalf ){
+      this->data[i] = pow(sin(this->b*r),2)/(this->a*r);
+    } else {
+      this->data[i] = 0.0;
     }
   }
+
+  free(x);
+  free(y);
 }
 
 
