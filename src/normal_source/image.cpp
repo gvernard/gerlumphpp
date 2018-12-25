@@ -181,7 +181,6 @@ void Image::writeObjectPNG(const std::string filename,int width,int height,int* 
   }
   png_write_end(png_ptr, NULL);
 
-  
   fclose(fp);
   png_free_data(png_ptr,info_ptr,PNG_FREE_ALL,-1);
   png_destroy_write_struct(&png_ptr, (png_infopp)NULL);

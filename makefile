@@ -7,7 +7,7 @@
 CC    = g++
 #CC_FLAGS = -std=c++11 -Wno-deprecated-gpu-targets # for a static library
 CC_FLAGS   = -std=c++11 -fPIC
-CC_LIBS    = -lpng -lCCfits
+CC_LIBS    = -lpng -lCCfits -lcfitsio
 INC   = -I include
 
 
