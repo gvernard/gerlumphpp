@@ -11,10 +11,14 @@ CC_LIBS    = -lpng -lCCfits -lcfitsio
 INC   = -I include
 
 
-CUDA  = /usr/local/cuda-8.0/bin/nvcc
+CUDA_LOCAL = /usr/local/cuda-8.0/bin/nvcc
+CUDA_LOCAL_PATH = /usr/local/cuda-8.0/lib64
 CUDA_FLAGS = -std=c++11 --compiler-options '-fPIC' -Wno-deprecated-gpu-targets # for a dynamic library
-CUDA_LIBS  = -lcudart -lcufft
-CUDA_PATH  = /usr/local/cuda-8.0/lib64
+CUDA_LIBS = -lcudart -lcufft
+
+CUDA_OZSTAR = /apps/skylake/software/core/cuda/9.2.88/bin/nvcc
+CUDA_OZSTAR_PATH = /apps/skylake/software/core/cuda/9.2.88/lib64
+
 
 SOURCE_DIR = src
 BUILD_DIR  = build
@@ -68,15 +72,17 @@ HEADERS = $(shell find $(HEADER_DIR) -type f -name '*.hpp')
 
 # GPU PART
 $(BUILD_DIR)/gpu_functions.o: $(SOURCE_DIR)/cpu_gpu/gpu_functions.cu $(HEADERS)
-	$(CUDA) $(CUDA_FLAGS) $(CUDA_LIBS) $(INC) -c -o $@ $< 
+#	@echo $(DOMAIN
+ifeq ($(DOMAIN),intra.astro.rug.nl)
+	$(CUDA_LOCAL) $(CUDA_FLAGS) $(CUDA_LIBS) $(INC) -c -o $@ $< 
+else
+	$(CUDA_OZSTAR) $(CUDA_FLAGS) $(CUDA_LIBS) $(INC) -c -o $@ $< 
+endif
+
 
 # CPU PART
 $(BUILD_DIR)/cpu_functions.o: $(SOURCE_DIR)/cpu_gpu/cpu_functions.cpp $(HEADERS)
-ifeq ($(DOMAIN),hpc.swin.edu.au)
 	$(CC) $(CC_FLAGS) $(CC_LIBS) -lfftw3 $(INC) -c -o $@ $<
-else
-	$(CC) $(CC_FLAGS) $(CC_LIBS) -lfftw3 $(INC) -c -o $@ $<
-endif
 
 # MAP PATH
 $(BUILD_DIR)/magnification_map.o: $(SOURCE_DIR)/magmap/magnification_map.cpp $(HEADERS)
@@ -89,18 +95,18 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/normal_source/%.cpp $(HEADERS)
 
 
 gpu: $(OBJECTS) $(GPU_OBJECTS) $(HEADERS)
-ifeq ($(DOMAIN),hpc.swin.edu.au)
-	g++ -shared -Wl,-soname,libgerlumph.so -L/usr/local/cuda-7.5/lib64 -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS) $(CC_LIBS) $(CUDA_LIBS) 
+ifeq ($(DOMAIN),intra.astro.rug.nl)
+	g++ -shared -Wl,-soname,libgerlumph.so -L$(CUDA_LOCAL_PATH) -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS) $(CC_LIBS) $(CUDA_LIBS)
 else
-	g++ -shared -Wl,-soname,libgerlumph.so -L$(CUDA_PATH) -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS) $(CC_LIBS) $(CUDA_LIBS)
+	g++ -shared -Wl,-soname,libgerlumph.so -L$(CUDA_OZSTAR_PATH) -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS) $(CC_LIBS) $(CUDA_LIBS) 
 endif
 
 
 cpu: $(OBJECTS) $(CPU_OBJECTS) $(HEADERS)
-ifeq ($(DOMAIN),hpc.swin.edu.au)
-	g++ -shared -Wl,-soname,libgerlumph.so -L/mnt/home/gvernard/myLibraries/fftw/lib -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS) $(CC_LIBS) -lfftw3 
-else
+ifeq ($(DOMAIN),intra.astro.rug.nl)
 	g++ -shared -Wl,-soname,libgerlumph.so -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS) $(CC_LIBS) -lfftw3
+else
+	g++ -shared -Wl,-soname,libgerlumph.so -L/mnt/home/gvernard/myLibraries/fftw/lib -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS) $(CC_LIBS) -lfftw3 
 endif
 
 

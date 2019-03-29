@@ -329,6 +329,51 @@ void Wavy::generateValues(){
   free(y);
 }
 
+//////////////////////// CLASS IMPLEMENTATION: Exponential ////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+Exponential::Exponential(double pixSizePhys,double sigma,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->sigma = sigma;
+  generateValues();
+  normalize();
+}
+double Exponential::getHalfRadius(){
+  return this->sigma/0.4106;
+}
+void Exponential::generateValues(){
+  double Rhalf = this->getHalfRadius();
+  this->Nx = (int) ceil(4.0*Rhalf/this->pixSizePhys); // x2 the disc radius + 3 pixels
+  this->Ny = (int) ceil(4.0*Rhalf/this->pixSizePhys); // x2 the disc radius + 3 pixels
+  makeEven(this->Nx);
+  makeEven(this->Ny);
+  this->data   = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width  = this->pixSizePhys*this->Nx;
+  this->height = this->pixSizePhys*this->Ny;
+
+  // create x,y grid
+  double* x = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  double* y = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  this->createGrid(x,y);
+
+  // Inner radius to truncate the profile because it is unbound for r->0, set to be the radius where the brightness is ten times the value at rhalf
+  double v_inner = 10.0/(exp(pow(Rhalf/this->sigma,0.75)) - 1.0);
+  double r_inner = this->sigma*pow(log(1.0+1.0/v_inner),4.0/3.0);
+
+  // set the values
+  for(int i=0;i<this->Nx*this->Ny;i++){
+    double r = hypot(x[i],y[i]);
+    if( r < r_inner ){
+      this->data[i] = v_inner;
+    } if( r < 2*Rhalf ){
+      this->data[i] = 1.0/(exp(pow(r/this->sigma,0.75)) - 1.0);
+    } else {
+      this->data[i] = 0.0;
+    }
+  }
+
+  free(x);
+  free(y);
+}
+
 
 
 //////////////////////// CLASS IMPLEMENTATION: Custom ////////////////////////

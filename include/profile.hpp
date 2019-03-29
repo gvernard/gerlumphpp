@@ -111,6 +111,15 @@ public:
   double getHalfRadius();
 };
 
+//////////////////////// CLASS DEFINITION: Wavy ////////////////////////
+class Exponential : public BaseProfile {
+public:
+  double sigma;
+  Exponential(double pixSizePhys,double sigma,double incl,double orient);
+  void generateValues();
+  double getHalfRadius();
+};
+
 //////////////////////// CLASS DEFINITION: Custom ////////////////////////
 class Custom : public BaseProfile {
 public:
