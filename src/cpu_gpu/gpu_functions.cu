@@ -134,18 +134,40 @@ Mpd MagnificationMap::getBinnedMpd(int Nbins){
 
 
 int myfft2d_r2c(int Nx,int Ny,cufftDoubleReal* data,cufftDoubleComplex* Fdata){
+  int result;
   cufftHandle plan;
   cufftDoubleReal* data_GPU;
   cufftDoubleComplex* Fdata_GPU;
 
   //allocate and transfer memory to the GPU
   cudaMalloc( (void**) &data_GPU, Nx*Ny*sizeof(cufftDoubleReal));
+  if( cudaGetLastError() != cudaSuccess ){
+    fprintf(stderr, "Cuda error: Failed to allocate data_GPU\n");
+    throw std::bad_alloc();
+  }
   cudaMemcpy( data_GPU, data, Nx*Ny*sizeof(cufftDoubleReal), cudaMemcpyHostToDevice);
   cudaMalloc( (void**) &Fdata_GPU, Nx*(Ny/2+1)*sizeof(cufftDoubleComplex));
+  if( cudaGetLastError() != cudaSuccess ){
+    fprintf(stderr, "Cuda error: Failed to allocate data_GPU\n");
+    throw std::bad_alloc();
+  }
 
   //do the fourier transform on the GPU
-  cufftPlan2d(&plan,Nx,Ny,CUFFT_D2Z);
-  cufftExecD2Z(plan, data_GPU, Fdata_GPU);
+  result = cufftPlan2d(&plan,Nx,Ny,CUFFT_D2Z);
+  if( result != CUFFT_SUCCESS ){
+    fprintf(stderr, "CUFFT Error: Unable to create plan\n");
+    cudaFree(data_GPU);
+    cudaFree(Fdata_GPU);
+    throw std::runtime_error("CUFFT Error: Unable to create plan");
+  }
+  result = cufftExecD2Z(plan, data_GPU, Fdata_GPU);
+  if( result != CUFFT_SUCCESS ){
+    fprintf(stderr, "CUFFT Error: unable to execute plan\n");
+    cudaFree(data_GPU);
+    cudaFree(Fdata_GPU);
+    cufftDestroy(plan);
+    throw std::runtime_error("CUFFT Error: unable to execute plan");
+  }
   //  cudaDeviceSynchronize();
   cudaThreadSynchronize();
   cufftDestroy(plan);
@@ -160,18 +182,40 @@ int myfft2d_r2c(int Nx,int Ny,cufftDoubleReal* data,cufftDoubleComplex* Fdata){
 
 
 int myfft2d_c2r(int Nx, int Ny, cufftDoubleComplex* Fdata, cufftDoubleReal* data){
+  int result;
   cufftHandle plan;
   cufftDoubleComplex* Fdata_GPU;
   cufftDoubleReal* data_GPU;
   
   //allocate and transfer memory
   cudaMalloc((void**) &Fdata_GPU, Nx*(Ny/2+1)*sizeof(cufftDoubleComplex));
+  if( cudaGetLastError() != cudaSuccess ){
+    fprintf(stderr, "Cuda error: Failed to allocate Fdata_GPU\n");
+    throw std::bad_alloc();
+  }
   cudaMemcpy(Fdata_GPU, Fdata, Nx*(Ny/2+1)*sizeof(cufftDoubleComplex), cudaMemcpyHostToDevice);
   cudaMalloc((void**) &data_GPU, Nx*Ny*sizeof(cufftDoubleReal));
+  if( cudaGetLastError() != cudaSuccess ){
+    fprintf(stderr, "Cuda error: Failed to allocate Fdata_GPU\n");
+    throw std::bad_alloc();
+  }
 
   //do the inverse fourier transform on the GPU
-  cufftPlan2d(&plan,Nx,Ny,CUFFT_Z2D) ;
-  cufftExecZ2D(plan, Fdata_GPU, data_GPU);
+  result = cufftPlan2d(&plan,Nx,Ny,CUFFT_Z2D) ;
+  if( result != CUFFT_SUCCESS ){
+    fprintf(stderr, "CUFFT Error: Unable to create plan\n");
+    cudaFree(Fdata_GPU);
+    cudaFree(data_GPU);
+    throw std::runtime_error("CUFFT Error: Unable to create plan");
+  }
+  result = cufftExecZ2D(plan, Fdata_GPU, data_GPU);
+  if( result != CUFFT_SUCCESS ){
+    fprintf(stderr, "CUFFT Error: unable to execute plan\n");
+    cudaFree(Fdata_GPU);
+    cudaFree(data_GPU);
+    cufftDestroy(plan);
+    throw std::runtime_error("CUFFT Error: unable to execute plan");
+  }
   //  cudaDeviceSynchronize();
   cudaThreadSynchronize();
   cufftDestroy(plan);
