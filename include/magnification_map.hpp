@@ -1,13 +1,11 @@
 #ifndef MAGNIFICATION_MAP_HPP
 #define MAGNIFICATION_MAP_HPP
 
-#ifdef MAP_PATH
-  #define PATH MAP_PATH
-#else
-//  #define PATH "/nfs/cluster/cosmic/gvernardos/DATABASES/gerlumph_db/"
-  #define PATH "/fred/oz108/DATABASES/gerlumph_db/"
-#endif
-
+//#ifndef MAP_PATH
+//#error You need pass a valid path as command line argument: -DMAP_PATH='"/path/ending/with/slash/"'
+//#else
+//#define PATH MAP_PATH
+//#endif
 
 #include <cstdlib>
 #include <string>
@@ -53,8 +51,7 @@ public:
 
 
 private:
-  const std::string path = PATH;
-  //  const std::string path = "/data/users/gvernard/";
+  const std::string path;
 };
 
 

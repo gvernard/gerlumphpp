@@ -1,24 +1,17 @@
-# If not running on gstar, then one can specify the path to the maps by calling: make MAP_PATH=/path/to/maps/without/quotes/and/ending/with/slash/
+# The code MUST be compilled by calling: make MAP_PATH=/path/to/maps/without/quotes/and/ending/with/slash/
 # To specify a different path you have to call "make clean" first.
 
 # Prerequisites: CCfits, libpng, cuda, fftw
 # The relevant lib and include directories must be in the corresponding environment path variables
 
-CC    = g++
+CC       = g++
 #CC_FLAGS = -std=c++11 -Wno-deprecated-gpu-targets # for a static library
-CC_FLAGS   = -std=c++11 -fPIC
-CC_LIBS    = -lpng -lCCfits -lcfitsio
-INC   = -I include
+CC_FLAGS = -std=c++11 -fPIC
+CC_LIBS  = -lpng -lCCfits -lcfitsio
+INC      = -I include
 
-
-CUDA_LOCAL = /usr/local/cuda-8.0/bin/nvcc
-CUDA_LOCAL_PATH = /usr/local/cuda-8.0/lib64
 CUDA_FLAGS = -std=c++11 --compiler-options '-fPIC' -Wno-deprecated-gpu-targets # for a dynamic library
-CUDA_LIBS = -lcudart -lcufft
-
-CUDA_OZSTAR = /apps/skylake/software/core/cuda/9.2.88/bin/nvcc
-CUDA_OZSTAR_PATH = /apps/skylake/software/core/cuda/9.2.88/lib64
-
+CUDA_LIBS  = -lcudart -lcufft
 
 SOURCE_DIR = src
 BUILD_DIR  = build
@@ -28,18 +21,6 @@ SOURCES = image.cpp fixed_locs.cpp light_curve.cpp mpd.cpp profile.cpp velocitie
 MAG_MAP = magnification_map.cpp
 GPU_SOURCES = gpu_functions.cu
 CPU_SOURCES = cpu_functions.cpp
-
-
-ifdef MAP_PATH
-#QUOTED_MAP_PATH = $(addprefix "\",$(addsuffix \"",$(MAP_PATH)))
-QUOTED_MAP_PATH = $(addprefix '",$(addsuffix "',$(MAP_PATH)))
-MAP_PATH_FLAGS = -DMAP_PATH=$(QUOTED_MAP_PATH)
-#$(info ${QUOTED_MAP_PATH})
-endif
-DOMAIN := $(shell dnsdomainname)
-
-
-
 
 
 #SOURCES = $(shell find $(SOURCE_DIR) -type f -name '*.cpp')
@@ -68,17 +49,21 @@ HEADERS = $(shell find $(HEADER_DIR) -type f -name '*.hpp')
 #$(info $$HEADERS is [${HEADERS}])
 
 
+# Checking for the MAP_PATH variable happens below, when compilling magnification_map,cpp
+# But I need to define these variables here, although they are meaningless if MAP_PATH is not defined
+QUOTED_MAP_PATH = $(addprefix '",$(addsuffix "',$(MAP_PATH)))
+MAP_PATH_FLAGS = -DMAP_PATH=$(QUOTED_MAP_PATH)
+
+
+
+
+
+
 
 
 # GPU PART
 $(BUILD_DIR)/gpu_functions.o: $(SOURCE_DIR)/cpu_gpu/gpu_functions.cu $(HEADERS)
-#	@echo $(DOMAIN
-ifeq ($(DOMAIN),intra.astro.rug.nl)
-	$(CUDA_LOCAL) $(CUDA_FLAGS) $(CUDA_LIBS) $(INC) -c -o $@ $< 
-else
-	$(CUDA_OZSTAR) $(CUDA_FLAGS) $(CUDA_LIBS) $(INC) -c -o $@ $< 
-endif
-
+	nvcc $(CUDA_FLAGS) $(CUDA_LIBS) $(INC) -c -o $@ $< 
 
 # CPU PART
 $(BUILD_DIR)/cpu_functions.o: $(SOURCE_DIR)/cpu_gpu/cpu_functions.cpp $(HEADERS)
@@ -86,7 +71,11 @@ $(BUILD_DIR)/cpu_functions.o: $(SOURCE_DIR)/cpu_gpu/cpu_functions.cpp $(HEADERS)
 
 # MAP PATH
 $(BUILD_DIR)/magnification_map.o: $(SOURCE_DIR)/magmap/magnification_map.cpp $(HEADERS)
+ifndef MAP_PATH
+	$(error MAP_PATH is not set)
+else
 	$(CC) $(CC_FLAGS) $(CC_LIBS) $(INC) $(MAP_PATH_FLAGS) -c -o $@ $<
+endif
 
 # REST OF THE SOURCE CODE
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/normal_source/%.cpp $(HEADERS)
@@ -94,20 +83,13 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/normal_source/%.cpp $(HEADERS)
 
 
 
+
 gpu: $(OBJECTS) $(GPU_OBJECTS) $(HEADERS)
-ifeq ($(DOMAIN),intra.astro.rug.nl)
-	g++ -shared -Wl,-soname,libgerlumph.so -L$(CUDA_LOCAL_PATH) -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS) $(CC_LIBS) $(CUDA_LIBS)
-else
-	g++ -shared -Wl,-soname,libgerlumph.so -L$(CUDA_OZSTAR_PATH) -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS) $(CC_LIBS) $(CUDA_LIBS) 
-endif
+	g++ -shared -Wl,-soname,libgerlumph.so -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS) $(CC_LIBS) $(CUDA_LIBS)
 
 
 cpu: $(OBJECTS) $(CPU_OBJECTS) $(HEADERS)
-ifeq ($(DOMAIN),intra.astro.rug.nl)
 	g++ -shared -Wl,-soname,libgerlumph.so -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS) $(CC_LIBS) -lfftw3
-else
-	g++ -shared -Wl,-soname,libgerlumph.so -L/mnt/home/gvernard/myLibraries/fftw/lib -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS) $(CC_LIBS) -lfftw3 
-endif
 
 
 

@@ -1,7 +1,7 @@
 #include "magnification_map.hpp"
 
 
-MagnificationMap::MagnificationMap(std::string id,double Rein){
+MagnificationMap::MagnificationMap(std::string id,double Rein):path(MAP_PATH) {
   this->id = id;
   this->imageType = "map";
   this->convolved = false;
@@ -37,7 +37,7 @@ MagnificationMap::MagnificationMap(std::string id,double Rein){
 }
 
 
-MagnificationMap::MagnificationMap(const MagnificationMap& other){
+MagnificationMap::MagnificationMap(const MagnificationMap& other):path(other.path){
   this->imageType = other.imageType;
   this->id     = other.id;
   this->k      = other.k;
