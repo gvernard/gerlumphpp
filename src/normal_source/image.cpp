@@ -84,6 +84,29 @@ void Image::writeImagePNG(const std::string filename,int sampling){
   free(rgb);
 }
 
+void Image::writeImagePNG(const std::string filename,int sampling,int xmin,int xmax,int ymin,int ymax){
+  // read, sample, and scale map
+  int nNx = floor((xmax-xmin)/sampling);
+  int nNy = floor((ymax-ymin)/sampling);
+  int* colors = (int*) calloc(nNx*nNy,sizeof(int));
+  if( this->imageType == "map" ){
+    scaleMap(colors,sampling,xmin,xmax,ymin,ymax);
+  } else if( this->imageType == "profile"){
+    scaleProfile(colors,sampling);   
+  }
+  
+  // read rgb values from table file (or select them from a stored list of rgb color tables)
+  int* rgb = (int*) calloc(3*256,sizeof(int));
+  //  readRGB("rgb.dat",rgb);
+  setRGB(rgb);
+
+  // write image
+  writeObjectPNG(filename,nNx,nNy,colors,rgb);
+
+  free(colors);
+  free(rgb);
+}
+
 void Image::scaleMap(int* colors,int sampling){
   double scale_max = 1.6;
   double scale_min = -1.6;
@@ -96,6 +119,31 @@ void Image::scaleMap(int* colors,int sampling){
   for(int i=0;i<nNy;i++){
     for(int j=0;j<nNx;j++){
       dum = log10(this->data[i*sampling*this->Nx+j*sampling]);
+      if( dum < scale_min ){
+	dum = scale_min;
+      }
+      if( dum > scale_max ){
+	dum = scale_max;
+      }
+      
+      dum2 = (dum + fabs(scale_min))*scale_fac;
+      colors[i*nNx+j] = (int) round(dum2);
+    }
+  }
+}
+
+void Image::scaleMap(int* colors,int sampling,int xmin,int xmax,int ymin,int ymax){
+  double scale_max = 1.6;
+  double scale_min = -1.6;
+  double scale_fac = 255/(fabs(scale_min) + scale_max);
+  double dum,dum2;
+
+  int nNx = floor((xmax-xmin)/sampling);
+  int nNy = floor((ymax-ymin)/sampling);
+
+  for(int i=0;i<nNy;i++){
+    for(int j=0;j<nNx;j++){
+      dum = log10(this->data[(ymin+(i*sampling))*this->Nx+xmin+j*sampling]);
       if( dum < scale_min ){
 	dum = scale_min;
       }

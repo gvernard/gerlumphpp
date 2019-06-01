@@ -24,10 +24,12 @@ public:
 
   void writeImageBIN(const std::string filename,int sampling);
   void writeImagePNG(const std::string filename,int sampling);
+  void writeImagePNG(const std::string filename,int sampling,int xmin,int xmax,int ymin,int ymax);
   void writeImageFITS(const std::string filename,int sampling);
 
 private:
   void scaleMap(int* colors,int sampling);
+  void scaleMap(int* colors,int sampling,int xmin,int xmax,int ymin,int ymax);
   void scaleProfile(int* colors,int sampling);
   void setRGB(int* rgb);
   void readRGB(const std::string filename,int* rgb);
