@@ -25,7 +25,7 @@ public:
     free(tot);
   };
 
-  void createVelocitiesK04(int seed,double ra,double dec,double sigma_l,double sigma_s,double sigma_disp,double zl,double zs,double Dl,double Ds,double Dls);
+  void createVelocitiesK04(int seed,double ra,double dec,double sigma_l,double sigma_s,double sigma_disp,double epsilon,double zl,double zs,double Dl,double Ds,double Dls);
   void writeVelocities(const std::string filename);
 
 private:
@@ -47,7 +47,7 @@ private:
 
   void velCMB(double ra_deg,double dec_deg,double& v_cmb,double& phi_cmb,double z_l,double D_l,double D_ls);
   double velPec(double sigma_l,double sigma_s,double z_l,double z_s,double D_l,double D_s);
-  double velDisp(double sigma_disp,double z_l,double D_s,double D_l);
+  double velDisp(double sigma_disp,double e,double z_l,double D_s,double D_l);
 };
 
 #endif /* VELOCITIES_HPP */

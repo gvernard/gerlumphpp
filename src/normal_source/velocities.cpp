@@ -11,7 +11,7 @@ velocityComponents::velocityComponents(int N){
   this->tot  = (velocity*) malloc(N*sizeof(velocity));
 }
 
-void velocityComponents::createVelocitiesK04(int seed,double ra,double dec,double sigma_l,double sigma_s,double sigma_disp,double z_l,double z_s,double D_l,double D_s,double D_ls){
+void velocityComponents::createVelocitiesK04(int seed,double ra,double dec,double sigma_l,double sigma_s,double sigma_disp,double epsilon,double z_l,double z_s,double D_l,double D_s,double D_ls){
   srand48(seed);
 
   for(int i=0;i<N;i++){
@@ -22,7 +22,7 @@ void velocityComponents::createVelocitiesK04(int seed,double ra,double dec,doubl
     this->pec[i].v   = velPec(sigma_l,sigma_s,z_l,z_s,D_l,D_s);
     this->pec[i].phi = getUniform(-180,180);
     
-    this->disp[i].v   = velDisp(sigma_disp,z_s,D_s,D_l);
+    this->disp[i].v   = velDisp(sigma_disp,epsilon,z_s,D_s,D_l);
     this->disp[i].phi = getUniform(-180,180);
     
     
@@ -36,7 +36,7 @@ void velocityComponents::createVelocitiesK04(int seed,double ra,double dec,doubl
 void velocityComponents::writeVelocities(const std::string filename){
   FILE* fh = fopen(filename.data(),"w");
   for(int i=0;i<this->N;i++){
-    fprintf(fh,"%12.4f %7.2f %12.4f %7.2f %12.4f %7.2f %12.4f %7.2f\n",this->tot[i].v,this->tot[i].phi,this->cmb[i].v,this->cmb[i].phi,this->pec[i].v,this->pec[i].phi,this->disp[i].v,this->disp[i].phi);
+    fprintf(fh,"%12.4f %7.2f %12.4f %7.2f %12.4f %7.2f %12.4f %7.2f\n",this->tot[i].v,this->tot[i].phi,this->cmb[i].v,this->cmb[i].phi,this->disp[i].v,this->disp[i].phi,this->pec[i].v,this->pec[i].phi);
   }
   fclose(fh);
 }
@@ -136,8 +136,8 @@ double velocityComponents::velPec(double sigma_l,double sigma_s,double z_l,doubl
   return fabs(z1*sigma);
 }
 
-double velocityComponents::velDisp(double sigma_disp,double z_l,double D_s,double D_l){
-  double e = getUniform(0.8,1.3);
+double velocityComponents::velDisp(double sigma_disp,double e,double z_l,double D_s,double D_l){
+  //  e = getUniform(0.8,1.3);
   return sqrt(2)*(D_s/D_l)*e*sigma_disp/(1+z_l);
 }
 
