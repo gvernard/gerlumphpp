@@ -1,6 +1,6 @@
-build/
+build/*.o
+bin/*.so
 data/
-bin/
 lib/*
 *.png
 *.fits
