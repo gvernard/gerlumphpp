@@ -22,7 +22,7 @@ void velocityComponents::createVelocitiesK04(int seed,double ra,double dec,doubl
     this->pec[i].v   = velPec(sigma_l,sigma_s,z_l,z_s,D_l,D_s);
     this->pec[i].phi = getUniform(-180,180);
     
-    this->disp[i].v   = velDisp(sigma_disp,epsilon,z_s,D_s,D_l);
+    this->disp[i].v   = velDisp(sigma_disp,epsilon,z_l,D_s,D_l);
     this->disp[i].phi = getUniform(-180,180);
     
     
