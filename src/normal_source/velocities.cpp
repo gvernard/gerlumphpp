@@ -27,8 +27,8 @@ void velocityComponents::createVelocitiesK04(int seed,double ra,double dec,doubl
     this->disp[i].phi = getUniform(-180,180);
     
     
-    double vtot_x = this->pec[i].v*sin(this->pec[i].phi*this->d2r) + this->disp[i].v*sin(this->disp[i].phi*this->d2r) + this->cmb[i].v*sin(this->cmb[i].phi*this->d2r);
-    double vtot_y = this->pec[i].v*cos(this->pec[i].phi*this->d2r) + this->disp[i].v*cos(this->disp[i].phi*this->d2r) + this->cmb[i].v*cos(this->cmb[i].phi*this->d2r);
+    double vtot_x = this->pec[i].v*cos(this->pec[i].phi*this->d2r) + this->disp[i].v*cos(this->disp[i].phi*this->d2r) + this->cmb[i].v*cos(this->cmb[i].phi*this->d2r);
+    double vtot_y = this->pec[i].v*sin(this->pec[i].phi*this->d2r) + this->disp[i].v*sin(this->disp[i].phi*this->d2r) + this->cmb[i].v*sin(this->cmb[i].phi*this->d2r);
     this->tot[i].v   = sqrt( pow(vtot_x,2) + pow(vtot_y,2) );
     this->tot[i].phi = atan2(vtot_y,vtot_x)*this->r2d;
   }
