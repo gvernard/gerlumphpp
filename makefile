@@ -83,12 +83,15 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/normal_source/%.cpp $(HEADERS)
 
 
 
+createdirs:
+	mkdir -p build lib
 
-gpu: $(OBJECTS) $(GPU_OBJECTS) $(HEADERS)
+gpu: createdirs $(OBJECTS) $(GPU_OBJECTS) $(HEADERS)
 	g++ -shared -Wl,-soname,libgerlumph.so -o lib/libgerlumph.so $(OBJECTS) $(GPU_OBJECTS) $(CC_LIBS) $(CUDA_LIBS)
 
 
-cpu: $(OBJECTS) $(CPU_OBJECTS) $(HEADERS)
+cpu: createdirs $(OBJECTS) $(CPU_OBJECTS) $(HEADERS)
+	mkdir -p build lib
 	g++ -shared -Wl,-soname,libgerlumph.so -o lib/libgerlumph.so $(OBJECTS) $(CPU_OBJECTS) $(CC_LIBS) -lfftw3
 
 

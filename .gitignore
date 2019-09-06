@@ -1,5 +1,5 @@
-build/*.o
-bin/*.so
+*.o
+*.so
 data/
 lib/*
 *.png
