@@ -37,8 +37,7 @@ void Image::writeImageFITS(const std::string filename,int sampling){
   long Ntot = (long) nNx*nNy;
   
   //  std::unique_ptr<CCfits::FITS> pFits(nullptr);
-  std::auto_ptr<CCfits::FITS> pFits(0);
-  pFits.reset( new CCfits::FITS("!"+filename,FLOAT_IMG,naxis,naxes) );
+  std::unique_ptr<CCfits::FITS> pFits( new CCfits::FITS("!"+filename,FLOAT_IMG,naxis,naxes) );
   
   std::vector<long> extAx(2,(long) nNy);
   CCfits::ExtHDU* imageExt = pFits->addImage("NEW-EXTENSION",FLOAT_IMG,extAx);
