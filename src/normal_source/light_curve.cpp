@@ -221,7 +221,7 @@ void LightCurveCollection::extractFull(){
   for(int i=0;i<this->Ncurves;i++){
     double Dx   = this->B[i].x - this->A[i].x;
     double Dy   = this->B[i].y - this->A[i].y;
-    int Nsamples = floor(hypot(Dy,Dx)+0.5);
+    int Nsamples = ceil(hypot(Dy,Dx)+0.5);
     double phi = atan2(Dy,Dx);
 
     this->lightCurves[i] = new LightCurve(Nsamples);
