@@ -49,7 +49,7 @@ HEADERS = $(shell find $(HEADER_DIR) -type f -name '*.hpp')
 #$(info $$HEADERS is [${HEADERS}])
 
 
-# Checking for the MAP_PATH variable happens below, when compilling magnification_map,cpp
+# Checking for the MAP_PATH variable happens below, when compilling magnification_map.cpp
 # But I need to define these variables here, although they are meaningless if MAP_PATH is not defined
 QUOTED_MAP_PATH = $(addprefix '",$(addsuffix "',$(MAP_PATH)))
 MAP_PATH_FLAGS = -DMAP_PATH=$(QUOTED_MAP_PATH)

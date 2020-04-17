@@ -40,18 +40,18 @@ public:
   double mu_th;
   double pixSizePhys; // in units of [10^14 cm]
   bool convolved;
+  const std::string path;
 
-  MagnificationMap(){};
+  MagnificationMap();
   MagnificationMap(std::string id,double Rein);
   MagnificationMap(const MagnificationMap& other);
 
   Mpd getFullMpd();
   Mpd getBinnedMpd(int Nbins);
   void convolve(Kernel* kernel,EffectiveMap* emap);
-
-
-private:
-  const std::string path;
+  std::string printMapPath(){
+    return this->path;
+  }
 };
 
 

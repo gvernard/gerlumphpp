@@ -1,6 +1,10 @@
 #include "magnification_map.hpp"
 
 
+MagnificationMap::MagnificationMap():path(MAP_PATH) {
+  // do nothing. Just used to define the path.
+}
+
 MagnificationMap::MagnificationMap(std::string id,double Rein):path(MAP_PATH) {
   this->id = id;
   this->imageType = "map";

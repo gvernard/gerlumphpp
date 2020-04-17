@@ -16,7 +16,7 @@ public:
   std::string imageType;
   int Nx;
   int Ny;
-  double* data;
+  double* data = NULL;
 
   ~Image(){
     free(data);
