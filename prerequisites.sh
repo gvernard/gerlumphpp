@@ -57,6 +57,6 @@ cd ..
 
 # ATTENTION!!! Add the following environment variables to your .bashrc file (or equivalent)
 #########################################################################################################
-CPATHT=$CPATH:$PREFIX/fftw/include:$PREFIX/cfitsio/include:$PREFIX/CCfits/include:$PREFIX/libpng/include:$PREFIX/jsoncpp/include
+CPATH=$CPATH:$PREFIX/fftw/include:$PREFIX/cfitsio/include:$PREFIX/CCfits/include:$PREFIX/libpng/include:$PREFIX/jsoncpp/include
 LIBRARY_PATH=$LIBRARY_PATH:$PREFIX/fftw/lib:$PREFIX/cfitsio/lib:$PREFIX/CCfits/lib:$PREFIX/libpng/lib:$PREFIX/jsoncpp/lib
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PREFIX/fftw/lib:$PREFIX/cfitsio/lib:$PREFIX/CCfits/lib:$PREFIX/libpng/lib:$PREFIX/jsoncpp/lib
