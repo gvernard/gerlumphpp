@@ -1,10 +1,13 @@
+#include <string>
+#include <vector>
+
 #include "gerlumph.hpp"
 
 int main(int argc,char* argv[]){
 
   // Generic options
   double Rein = 500;        // in 10^14 cm
-  std::string map_id = "18200";
+  std::string map_id = "12345";
 
 
   // A Gaussian profile

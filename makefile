@@ -98,17 +98,12 @@ cpu: createdirs $(OBJECTS) $(CPU_OBJECTS) $(HEADERS)
 
 
 
-test_gpu: gpu
-	$(CC) -std=c++11 -I include -L lib -lgerlumph -o bin/readMap test/readMap.cpp
+tests_cpu: cpu
+	$(CC) -std=c++11 -I include -L lib -o tests/example tests/example.cpp -lgerlumph
 
-
-test_cpu: cpu
-	$(CC) -std=c++11 -I include -L lib -lgerlumph -o bin/readMap test/readMap.cpp
-#	$(CC) test/read_profile.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/read
-#	$(CC) test/compare_profiles.cpp $(FLAGS) -I include -L lib $(LIBS) -o bin/compare
-#	$(CC) test/main.cpp $(CC_FLAGS) -I include -L lib -lgerlumph -o bin/main
-#	$(CC) test/create_profiles.cpp $(CC_FLAGS) -I include -L lib -lgerlumph -o bin/create
+tests_gpu: gpu
+	$(CC) -std=c++11 -I include -L lib -o tests/example tests/example.cpp -lgerlumph
 
 
 clean:	
-	$(RM) -r $(BUILD_DIR)/* bin/* lib/*
+	$(RM) -r $(BUILD_DIR)/* bin/* lib/* tests/example

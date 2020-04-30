@@ -1,7 +1,6 @@
 *.o
 *.so
-data/
 lib/*
 *.png
 *.fits
-push_library.sh
+tests/example
