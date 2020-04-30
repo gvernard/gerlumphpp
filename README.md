@@ -85,7 +85,3 @@ and the example code will produce a list of output images and data.
 
 
 
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
