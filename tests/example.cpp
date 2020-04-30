@@ -45,24 +45,23 @@ int main(int argc,char* argv[]){
 
 
 
-  // Read in a map
+  std::cout << "Read in a map" << std::endl;
   MagnificationMap amap(map_id,Rein);
 
-  // Write map images
+  std::cout << "Write map images" << std::endl;
   amap.writeImagePNG("sampled_map.png",10);
   amap.writeImageFITS("sampled_map.fits",10);
 
-  // Get and write map MPDs
-  Mpd a = amap.getFullMpd();
-  a.writeMpd("full_mpd.dat");
-  Mpd b = amap.getBinnedMpd(mpd_bins);
+  
+  std::cout << "Get and write map MPDs" << std::endl;
+  Mpd a = amap.getFullMpd(); // CPU memory intensive!
+  a.writeMpd("full_mpd.dat"); 
+  Mpd b = amap.getBinnedMpd(mpd_bins); // CPU memory intensive!
   b.writeMpd("binned_mpd.dat");
 
 
 
-
-
-  // Create a profile and write its image
+  std::cout << "Create a profile and write its image" << std::endl;
   Gaussian aprofile(amap.pixSizePhys,gauss_size,gauss_incl,gauss_orient);
   aprofile.writeImagePNG("gaussian.png",1);
   aprofile.writeImageFITS("gaussian.fits",1);
@@ -70,8 +69,7 @@ int main(int argc,char* argv[]){
 
 
 
-
-  // Concolve map with profile
+  std::cout << "Concolve map with profile" << std::endl;
   Kernel akernel(amap.Nx,amap.Ny,&aprofile);
   EffectiveMap emap(emap_offset,&amap);
   amap.convolve(&akernel,&emap);
@@ -80,8 +78,8 @@ int main(int argc,char* argv[]){
 
 
 
-
-  // Get the MPD of the convolved map, and write the map's image
+  
+  std::cout << "Get the MPD of the convolved map, and write the map's image" << std::endl;
   emap.writeImagePNG("convolved_map.png",10);
   Mpd c = emap.getBinnedMpd(mpd_bins);
   c.writeMpd("conv_binned_mpd.dat");
@@ -89,22 +87,21 @@ int main(int argc,char* argv[]){
 
 
 
-
-  // Create a light curve collection with random locations and write them
+  std::cout << "Create a light curve collection with random locations and write them" << std::endl;
   LightCurveCollection acollection(Nlc,&emap);
   acollection.createRandomLocations(lc_seed,lc_length);
   acollection.writeLocations("lc_locs.dat");
 
-  // Extract full light curve
+  std::cout << "Extract full light curve" << std::endl;
   acollection.extractFull();
   acollection.writeCurves("","lc_full_");
 
-  // Copy to a new object (without the extracted data) and extract regularly sampled light curve
+  std::cout << "Copy to a new object (without the extracted data) and extract regularly sampled light curve" << std::endl;
   LightCurveCollection bcollection = acollection;
   bcollection.extractSampled(v,dt,tmax);
   bcollection.writeCurves("","lc_sampled_");
 
-  // Copy to a new object (without the extracted data) and extract sampled curve according to observing strategy
+  std::cout << "Copy to a new object (without the extracted data) and extract sampled curve according to observing strategy" << std::endl;
   LightCurveCollection ccollection = acollection;
   ccollection.extractStrategy(v,t_obs);
   ccollection.writeCurves("","lc_strategy_");
@@ -113,14 +110,14 @@ int main(int argc,char* argv[]){
 
 
 
-  // Create a collection of fixed random locations and write output
+  std::cout << "Create a collection of fixed random locations and write output" << std::endl;
   FixedLocationCollection afixed(Nfixed,&emap);
   afixed.createRandomLocations(fixed_seed);
   afixed.extract();
   afixed.writeLocations("fixed_locs_random.dat");
   afixed.writeData("fixed_data_random.dat");
 
-  // Create a collection of fixed locations on a grid and write output
+  std::cout << "Create a collection of fixed locations on a grid and write output" << std::endl;
   FixedLocationCollection bfixed(Nfixed,&emap);
   bfixed.createGridLocations();
   bfixed.extract();
