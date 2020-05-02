@@ -37,15 +37,16 @@ class LightCurveCollection {
 public:
   int Ncurves;
   std::string type;
-  point* A; // initial location of the light curves in pixels
-  point* B; // final location of the light curves in pixels
+  point* A; // initial location of the light curves in EffectiveMap pixels (shortened by the offset)
+  point* B; // final location of the light curves in EffectiveMap pixels (shortened by the offset)
   LightCurve** lightCurves;
-  double pixSizePhys;
+   double pixSizePhys;
   int Nx; // width of the effective map from which the light curves will be exracted
   int Ny; // height of the effective map from which the light curves will be exracted
   MagnificationMap* emap;
 
   LightCurveCollection(){};
+  LightCurveCollection(int Ncurves);
   LightCurveCollection(int Ncurves,MagnificationMap* emap);
   LightCurveCollection(const LightCurveCollection& other);
   ~LightCurveCollection(){
@@ -65,6 +66,8 @@ public:
   void createRandomLocations(int seed,int maxLen);
   void createOrientedRandomLocations(int seed,int maxLen,double angle);
   void createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi);
+  void createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi,double phig);
+  void createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi,std::vector<double> phig);
 
   std::vector<int> checkLengthFull();
   std::vector<int> checkLength(double v,double tmax);
@@ -83,8 +86,10 @@ public:
   template<typename mType,typename tType> void writeCurvesDegraded(const std::string path,const std::string suffix);
   template<typename mType,typename tType,typename eType> void writeCurvesDegraded(const std::string path,const std::string suffix);
 
-private:
   const double vfactor = 8.64*1.e-5; // conversion from [km/s] to [10^14 cm / day]
+  const double d2r = 0.017453; // degrees to radians
+
+private:
   void sampleLightCurve(int index,std::vector<double> length,double phi);
   void interpolatePlane(double xk,double yk,double& m,double& dm);
 

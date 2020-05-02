@@ -4,6 +4,13 @@
 #include <cmath>
 #include <fstream>
 
+LightCurveCollection::LightCurveCollection(int Ncurves){
+  this->Ncurves = Ncurves;
+  this->A = (point*) calloc(Ncurves,sizeof(point));
+  this->B = (point*) calloc(Ncurves,sizeof(point));
+  this->lightCurves = new LightCurve*[Ncurves];
+}
+
 LightCurveCollection::LightCurveCollection(int Ncurves,MagnificationMap* emap){
   this->Ncurves = Ncurves;
   this->A = (point*) calloc(Ncurves,sizeof(point));
@@ -36,6 +43,10 @@ LightCurveCollection::LightCurveCollection(const LightCurveCollection& other){
 }
 
 void LightCurveCollection::setEmap(MagnificationMap* emap){
+  // If emap is reset to something with different resolution, I need to rescale A and B coordinates
+  this->pixSizePhys = emap->pixSizePhys;
+  this->Nx = emap->Nx;
+  this->Ny = emap->Ny;
   this->emap = emap;
 }
 
@@ -111,14 +122,13 @@ void LightCurveCollection::createOrientedRandomLocations(int seed,int maxLen,dou
 
 void LightCurveCollection::createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi){
   srand48(seed);
-  double d2r = 0.017453; // degrees to radians
   point A;
   point B;
   double len,lenx,leny,phi_rad;
 
   for(int i=0;i<this->Ncurves;i++){
     len = tmax*v[i]*this->vfactor/this->pixSizePhys; // has to be in pixel units
-    phi_rad = phi[i]*d2r;
+    phi_rad = phi[i]*this->d2r;
     lenx = len*cos(phi_rad);
     leny = len*sin(phi_rad);
     
@@ -138,6 +148,78 @@ void LightCurveCollection::createVelocityLocations(int seed,double tmax,std::vec
     
     this->A[i] = A;
     this->B[i] = B;
+  }
+}
+
+void LightCurveCollection::createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi,double phig){
+  // Same as above but it takes into account the rotation due to phig (external shear angle) to make sure the end point B is still inside the effective map.
+  // Otherwise it changes starting point A and does it again.
+  srand48(seed);
+  point A;
+  point B;
+  double len,lenx,leny,phi_rad;
+
+  for(int i=0;i<this->Ncurves;i++){
+    len = tmax*v[i]*this->vfactor/this->pixSizePhys; // has to be in pixel units
+    phi_rad = (phi[i]-phig)*this->d2r;
+    lenx = len*cos(phi_rad);
+    leny = len*sin(phi_rad);
+    
+    while(true){
+      A.x = drand48()*this->Nx;
+      A.y = drand48()*this->Ny;
+      B.x = A.x + lenx;
+      B.y = A.y + leny;
+      //Is the new end point still within the (effective) map?
+      if ( (B.x < 0) || (B.x >= this->Nx) || (B.y < 0) || (B.y >= this->Ny) ){
+	//	printf("%5d%5d problem\n",(int)round(loc.xo),(int)round(loc.yo));
+	continue;
+      } else {
+	break;
+      }
+    }
+    
+    this->A[i] = A;
+    this->B[i] = B;
+  }
+}
+
+void LightCurveCollection::createVelocityLocations(int seed,double tmax,std::vector<double> v,std::vector<double> phi,std::vector<double> phig){
+  // Same as above but it takes into account a vector of rotations phig.
+  // This function sets only starting point A.
+
+  srand48(seed);
+  point A;
+  point B;
+  double len,lenx,leny,phi_rad;
+
+  for(int i=0;i<this->Ncurves;i++){
+    len = tmax*v[i]*this->vfactor/this->pixSizePhys; // has to be in pixel units
+    
+    while(true){
+      A.x = drand48()*this->Nx;
+      A.y = drand48()*this->Ny;
+
+      int false_counter = 0;
+      for(int j=0;j<phig.size();j++){
+	phi_rad = (phi[i] - phig[j])*this->d2r;
+	lenx = len*cos(phi_rad);
+	leny = len*sin(phi_rad);
+	B.x = A.x + lenx;
+	B.y = A.y + leny;
+	//Is the new end point still within the (effective) map?
+	if ( (B.x < 0) || (B.x >= this->Nx) || (B.y < 0) || (B.y >= this->Ny) ){
+	  false_counter++;
+	}
+      }
+      if( false_counter > 0 ){
+	continue;
+      } else {
+	break;
+      }
+    }
+    
+    this->A[i] = A;
   }
 }
 
