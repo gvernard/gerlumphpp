@@ -496,3 +496,43 @@ void Custom::binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
   }
   free(bin_counts);
 }
+
+
+
+//////////////////////// CLASS IMPLEMENTATION: Gaussian lamp-post ////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+GaussianLP::GaussianLP(double pixSizePhys,double sdev,int t0,double* f,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
+  this->sdev = sdev;
+  this->t0 = t0;
+  this->f = f;
+  generateValues();
+  normalize();
+}
+double GaussianLP::getHalfRadius(){
+  return 1.18*this->sdev;
+}
+void GaussianLP::generateValues(){
+  double Rhalf = this->getHalfRadius();
+  this->Nx = (int) ceil(4.0*Rhalf/this->pixSizePhys); // width is equal to x4 the half light radius
+  this->Ny = (int) ceil(4.0*Rhalf/this->pixSizePhys); // height is equal to x4 the half light radius
+  makeEven(this->Nx);
+  makeEven(this->Ny);
+  this->data  = (double*) calloc(this->Nx*this->Ny,sizeof(double));
+  this->width  = this->pixSizePhys*this->Nx;
+  this->height = this->pixSizePhys*this->Ny;
+
+  // create x,y grid
+  double* x = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  double* y = (double*) malloc(this->Nx*this->Ny*sizeof(double));
+  this->createGrid(x,y);
+
+  // set the values
+  double s = 2*pow(this->sdev,2);
+  for(int i=0;i<this->Nx*this->Ny;i++){
+    double r = hypot(x[i],y[i]);
+    this->data[i] = exp(-r*r/s);
+  }
+
+  free(x);
+  free(y);
+}

@@ -161,7 +161,7 @@ void LightCurveCollection::createVelocityLocations(int seed,double tmax,std::vec
 
   for(int i=0;i<this->Ncurves;i++){
     len = tmax*v[i]*this->vfactor/this->pixSizePhys; // has to be in pixel units
-    phi_rad = (phi[i]-phig)*this->d2r;
+    phi_rad = (phi[i] - phig - 90)*this->d2r; // the maps are at 90-degrees with respect to the shear orientation 2*phi = phig
     lenx = len*cos(phi_rad);
     leny = len*sin(phi_rad);
     
@@ -202,7 +202,7 @@ void LightCurveCollection::createVelocityLocations(int seed,double tmax,std::vec
 
       int false_counter = 0;
       for(int j=0;j<phig.size();j++){
-	phi_rad = (phi[i] - phig[j])*this->d2r;
+	phi_rad = (phi[i] - phig[j] - 90)*this->d2r; // the maps are at 90-degrees with respect to the shear orientation 2*phi = phig
 	lenx = len*cos(phi_rad);
 	leny = len*sin(phi_rad);
 	B.x = A.x + lenx;

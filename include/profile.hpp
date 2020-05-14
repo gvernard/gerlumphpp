@@ -68,6 +68,17 @@ public:
   double getHalfRadius();
 };
 
+//////////////////////// CLASS DEFINITION: Gaussian lamp-post ////////////////////////
+class GaussianLP : public BaseProfile {
+public:
+  double sdev; // this is equal to sdev, in [10^14 cm]
+  int t0;
+  double* f;
+  GaussianLP(double pixSizePhys,double sdev,int t0,double* f,double incl,double orient);
+  void generateValues();
+  double getHalfRadius();
+};
+
 //////////////////////// CLASS DEFINITION: Gaussian ////////////////////////
 class Gaussian : public BaseProfile {
 public:
@@ -111,7 +122,7 @@ public:
   double getHalfRadius();
 };
 
-//////////////////////// CLASS DEFINITION: Wavy ////////////////////////
+//////////////////////// CLASS DEFINITION: Exponential /////////////////
 class Exponential : public BaseProfile {
 public:
   double sigma;
@@ -120,7 +131,7 @@ public:
   double getHalfRadius();
 };
 
-//////////////////////// CLASS DEFINITION: Custom ////////////////////////
+//////////////////////// CLASS DEFINITION: Custom //////////////////////
 class Custom : public BaseProfile {
 public:
   Custom(double pixSizePhys,const std::string filename,double profPixSizePhys,double incl,double orient);
