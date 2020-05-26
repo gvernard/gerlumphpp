@@ -37,8 +37,8 @@ private:
   const double two_pi = 2.0*3.14159265358979323846;
 
   const double v_apex = 387; // km/s
-  const double l_dip_deg = 264; // in deg
-  const double b_dip_deg = 90 - 48.26; // in deg
+  const double l_dip_deg = 264.4; // in deg
+  const double b_dip_deg = 48.4;  // in deg
 
 
   void eq2ga(double ra_deg,double dec_deg,double& l_deg,double& b_deg);

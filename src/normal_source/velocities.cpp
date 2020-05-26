@@ -18,7 +18,7 @@ void velocityComponents::createVelocitiesK04(int seed,double ra,double dec,doubl
     velocity vel;
 
     velCMB(ra,dec,this->cmb[i].v,this->cmb[i].phi,z_l,D_l,D_ls); // the CMB velocity at the RA,DEC of the lens in the RA,DEC reference frame centered on the lens
-    this->cmb[i].phi += 90; // reflecting the x-axis of the RA,DEC frame centered on the lens to match the usual right handed cartesian frame
+    //    this->cmb[i].phi -= 90; // reflecting the x-axis of the RA,DEC frame centered on the lens to match the usual right handed cartesian frame
     
     this->pec[i].v   = velPec(sigma_l,sigma_s,z_l,z_s,D_l,D_s);
     this->pec[i].phi = getUniform(-180,180);
@@ -84,7 +84,7 @@ void velocityComponents::velCMB(double ra_deg,double dec_deg,double& v_cmb,doubl
   double b_deg;
   eq2ga(ra_deg,dec_deg,l_deg,b_deg);
   double l = l_deg*this->d2r;
-  double b = (90-b_deg)*this->d2r;
+  double b = b_deg*this->d2r;
   //std::cout << l << " " << b << std::endl;
 
   // r is the unit vector in the direction of the observation
@@ -110,8 +110,7 @@ void velocityComponents::velCMB(double ra_deg,double dec_deg,double& v_cmb,doubl
   // get vnet back in spherical coordinates
   double norm  = sqrt(vnet_1*vnet_1+vnet_2*vnet_2+vnet_3*vnet_3);
   double b_out = acos(vnet_3/norm)*this->r2d;
-  b_out = 90 - b_out;
-  double l_out = atan(vnet_2/vnet_1)*this->r2d;
+  double l_out = atan2(vnet_2,vnet_1)*this->r2d;
   //std::cout << l_out*d2r << " " << b_out*d2r << std::endl;
 
   // convert galactic to equatorial coordinates
@@ -121,7 +120,7 @@ void velocityComponents::velCMB(double ra_deg,double dec_deg,double& v_cmb,doubl
   //std::cout << norm << "   " << dec_out << "  " << ra_out << std::endl;
 
   v_cmb = (D_ls/D_l)*norm/(1.0+z_l);
-  phi_cmb = atan2(ra_out,dec_out)*this->r2d;
+  phi_cmb = atan2(-ra_out,dec_out)*this->r2d; // I need -ra because the positive ra axis on the sky is to the left, hence -ra is the coordinate in the usual cartesian frame
 }
 
 double velocityComponents::velPec(double sigma_l,double sigma_s,double z_l,double z_s,double D_l,double D_s){
