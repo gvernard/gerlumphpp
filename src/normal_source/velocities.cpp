@@ -37,6 +37,10 @@ void velocityComponents::createVelocitiesK04(int seed,double ra,double dec,doubl
 void velocityComponents::writeVelocities(const std::string filename){
   FILE* fh = fopen(filename.data(),"w");
   for(int i=0;i<this->N;i++){
+    this->tot[i].phi  -= 90; // converting to east-of-north
+    this->cmb[i].phi  -= 90;
+    this->disp[i].phi -= 90;
+    this->pec[i].phi  -= 90;
     fprintf(fh,"%12.4f %7.2f %12.4f %7.2f %12.4f %7.2f %12.4f %7.2f\n",this->tot[i].v,this->tot[i].phi,this->cmb[i].v,this->cmb[i].phi,this->disp[i].v,this->disp[i].phi,this->pec[i].v,this->pec[i].phi);
   }
   fclose(fh);
