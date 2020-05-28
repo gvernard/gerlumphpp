@@ -1,7 +1,7 @@
 #include "velocities.hpp"
 
 #include <cmath>
-
+#include <iostream>
 
 velocityComponents::velocityComponents(int N){
   this->N = N;
@@ -9,6 +9,22 @@ velocityComponents::velocityComponents(int N){
   this->pec  = (velocity*) malloc(N*sizeof(velocity));
   this->disp = (velocity*) malloc(N*sizeof(velocity));
   this->tot  = (velocity*) malloc(N*sizeof(velocity));
+
+  // Get the dipole location in spherical coordinates
+  // Dipole in equatorial:
+  double ra_dip,dec_dip;
+  this->ga2eq(ra_dip,dec_dip,this->l_dip_deg,this->b_dip_deg);
+  double theta_0 = (90 - dec_dip)*this->d2r;
+  double phi_0 = ra_dip*this->d2r;
+  // Dipole in galactic:
+  //double theta_0 = (90 - this->b_dip_deg)*this->d2r;
+  //double phi_0 = this->l_dip_deg*this->d2r;  
+
+  
+  // The 3d vector of the CMB velocity
+  this->vcmb_x = this->v_apex*cos(phi_0)*sin(theta_0);
+  this->vcmb_y = this->v_apex*sin(phi_0)*sin(theta_0);
+  this->vcmb_z = this->v_apex*cos(theta_0);
 }
 
 void velocityComponents::createVelocitiesK04(int seed,double ra,double dec,double sigma_l,double sigma_s,double sigma_disp,double epsilon,double z_l,double z_s,double D_l,double D_s,double D_ls){
@@ -79,52 +95,43 @@ void velocityComponents::ga2eq(double& ra_deg,double& dec_deg,double l_deg,doubl
 }
 
 void velocityComponents::velCMB(double ra_deg,double dec_deg,double& v_cmb,double& phi_cmb,double z_l,double D_l,double D_ls){
-  double l_dip     = this->l_dip_deg*this->d2r;
-  double b_dip     = this->b_dip_deg*this->d2r;
+  // Convert input ra,dec to spherical coordinates (where ra is aligned with x and dec with the z axes)
+  double theta = (90 - dec_deg)*this->d2r;
+  double phi   = ra_deg*this->d2r;
+
+  // ur, utheta, and uphi are the local orthogonal unit vectors in the directions of increasing r, theta, and phi
+  double ur_x = cos(phi)*sin(theta);
+  double ur_y = sin(phi)*sin(theta);
+  double ur_z = cos(theta);
+  double utheta_x = cos(theta)*cos(phi);
+  double utheta_y = cos(theta)*sin(phi);
+  double utheta_z = -sin(theta);
+  double uphi_x = -sin(phi);
+  double uphi_y = cos(phi);
+  double uphi_z = 0;
+
+  // v_r is equal to vcmb*r, i.e.  it is the cmb vector projected on the radial unit vector
+  double v_r_mag = ur_x*this->vcmb_x + ur_y*this->vcmb_y + ur_z*this->vcmb_z;
+
+  // v_trans is the transverse vector, i.e. it is the vector difference of the CMB vector and its projection at the direction of the observation (radial).
+  double v_trans_x = (this->vcmb_x - v_r_mag*ur_x);
+  double v_trans_y = (this->vcmb_y - v_r_mag*ur_y);
+  double v_trans_z = (this->vcmb_z - v_r_mag*ur_z);
   
-
-  // convert equatorial to galactic coordinates
-  double l_deg;
-  double b_deg;
-  eq2ga(ra_deg,dec_deg,l_deg,b_deg);
-  double l = l_deg*this->d2r;
-  double b = b_deg*this->d2r;
-  //std::cout << l << " " << b << std::endl;
-
-  // r is the unit vector in the direction of the observation
-  double r_1 = cos(l)*sin(b);
-  double r_2 = sin(l)*sin(b);
-  double r_3 = cos(b);
-  //std::cout << r_1 << " " << r_2 << " " << r_3 << std::endl;
-
-  // vcmb is the vector of the CMB dipole
-  double vcmb_1 = this->v_apex*cos(l_dip)*sin(b_dip);
-  double vcmb_2 = this->v_apex*sin(l_dip)*sin(b_dip);
-  double vcmb_3 = this->v_apex*cos(b_dip);
-  //std::cout << vcmb_1 << " " << vcmb_2 << " " << vcmb_3 << std::endl;
-
-  // vnet is the net (transverse) velocity at the direction of observation due to the CMB dipole.
-  // It is the vector difference of the velocity of the CMB and its projection at the direction of the observation.
-  double a = r_1*vcmb_1 + r_2*vcmb_2 + r_3*vcmb_3;
-  double vnet_1 = (vcmb_1 - a*r_1);
-  double vnet_2 = (vcmb_2 - a*r_2);
-  double vnet_3 = (vcmb_3 - a*r_3);
-  //std::cout << vnet_1 << " " << vnet_2 << " " << vnet_3 << std::endl;
-
-  // get vnet back in spherical coordinates
-  double norm  = sqrt(vnet_1*vnet_1+vnet_2*vnet_2+vnet_3*vnet_3);
-  double b_out = acos(vnet_3/norm)*this->r2d;
-  double l_out = atan2(vnet_2,vnet_1)*this->r2d;
-  //std::cout << l_out*d2r << " " << b_out*d2r << std::endl;
-
-  // convert galactic to equatorial coordinates
-  double ra_out;
-  double dec_out;
-  ga2eq(ra_out,dec_out,l_out,b_out);
-  //std::cout << norm << "   " << dec_out << "  " << ra_out << std::endl;
-
+  // get magnitude of the transverse velocity vector
+  double norm = sqrt(v_trans_x*v_trans_x + v_trans_y*v_trans_y + v_trans_z*v_trans_z);
   v_cmb = (D_ls/D_l)*norm/(1.0+z_l);
-  phi_cmb = atan2(-ra_out,dec_out)*this->r2d; // I need -ra because the positive ra axis on the sky is to the left, hence -ra is the coordinate in the usual cartesian frame
+  //  v_cmb = norm;
+  
+  // get the v_r, v_theta, and v_phi coordinates of the transverse vector in the local r,theta,phi reference frame
+  // because the transverse vector is by construction on the plane locally tangential to the sphere, vr = 0
+  double v_r     = v_trans_x*ur_x     + v_trans_y*ur_y     + v_trans_z*ur_z;
+  double v_theta = v_trans_x*utheta_x + v_trans_y*utheta_y + v_trans_z*utheta_z;
+  double v_phi   = v_trans_x*uphi_x   + v_trans_y*uphi_y   + v_trans_z*uphi_z;
+
+  // the utheta and uphi are the orthogonal vectors on the tangential plane and they correspond to -x' and -y'
+  // hence, the angle of the transverse cmb velocity vector on the plane of the sky defined by x' and y' is:
+  phi_cmb = atan2(-v_theta,-v_phi)*this->r2d; // I need -ra because the positive ra axis on the sky is to the left, hence -ra is the coordinate in the usual cartesian frame  
 }
 
 double velocityComponents::velPec(double sigma_l,double sigma_s,double z_l,double z_s,double D_l,double D_s){

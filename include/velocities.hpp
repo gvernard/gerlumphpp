@@ -37,10 +37,15 @@ private:
   const double two_pi = 2.0*3.14159265358979323846;
 
   const double v_apex = 387; // km/s
-  const double l_dip_deg = 264.4; // in deg
-  const double b_dip_deg = 48.4;  // in deg
+  // We move towards (l,b)=(264.4,48.4) (Kogut et al. 1993), so everything is moving towards the opposite direction
+  const double l_dip_deg = 264.4 - 180; // in deg
+  const double b_dip_deg = -48.4;  // in deg
 
-
+  // The 3d vector of the CMB velocity
+  double vcmb_x;
+  double vcmb_y;
+  double vcmb_z;
+  
   void eq2ga(double ra_deg,double dec_deg,double& l_deg,double& b_deg);
   void ga2eq(double& ra_deg,double& dec_deg,double l_deg,double b_deg);
   double getUniform(double a,double b);
