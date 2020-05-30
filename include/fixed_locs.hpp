@@ -15,6 +15,7 @@ public:
   EffectiveMap* emap;
 
   FixedLocationCollection(int Nlocs,EffectiveMap* emap);
+  FixedLocationCollection(int Nlocs,int Nx,int Ny);
   FixedLocationCollection(const FixedLocationCollection& other);
   ~FixedLocationCollection(){
     free(A);

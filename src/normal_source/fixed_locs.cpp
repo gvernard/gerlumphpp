@@ -15,6 +15,16 @@ FixedLocationCollection::FixedLocationCollection(int Nlocs,EffectiveMap* emap){
   this->dm = (double*) calloc(Nlocs,sizeof(double));
 }
 
+FixedLocationCollection::FixedLocationCollection(int Nlocs,int Nx,int Ny){
+  // Need to call setEmap manually if this constructor is used
+  this->Nlocs = Nlocs;
+  this->Nx = Nx;
+  this->Ny = Ny;
+  this->A  = (point*) calloc(Nlocs,sizeof(point));
+  this->m  = (double*) calloc(Nlocs,sizeof(double));
+  this->dm = (double*) calloc(Nlocs,sizeof(double));
+}
+
 FixedLocationCollection::FixedLocationCollection(const FixedLocationCollection& other){
   this->Nlocs = other.Nlocs;
   this->type  = other.type;
