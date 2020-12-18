@@ -10,7 +10,7 @@ velocityComponents::velocityComponents(int N){
   this->disp = (velocity*) malloc(N*sizeof(velocity));
   this->tot  = (velocity*) malloc(N*sizeof(velocity));
 
-  // Get the dipole location in spherical coordinates
+  // Get the dipole location in spherical coordinates.
   // Dipole in equatorial:
   double ra_dip,dec_dip;
   this->ga2eq(ra_dip,dec_dip,this->l_dip_deg,this->b_dip_deg);
@@ -95,7 +95,7 @@ void velocityComponents::ga2eq(double& ra_deg,double& dec_deg,double l_deg,doubl
 }
 
 void velocityComponents::velCMB(double ra_deg,double dec_deg,double& v_cmb,double& phi_cmb,double z_l,double D_l,double D_ls){
-  // Convert input ra,dec to spherical coordinates (where ra is aligned with x and dec with the z axes)
+  // Convert input ra,dec to spherical coordinates (where ra is aligned with x and dec with the y axes)
   double theta = (90 - dec_deg)*this->d2r;
   double phi   = ra_deg*this->d2r;
 

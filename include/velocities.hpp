@@ -27,6 +27,7 @@ public:
 
   void createVelocitiesK04(int seed,double ra,double dec,double sigma_l,double sigma_s,double sigma_disp,double epsilon,double zl,double zs,double Dl,double Ds,double Dls);
   void writeVelocities(const std::string filename);
+  void velCMB(double ra_deg,double dec_deg,double& v_cmb,double& phi_cmb,double z_l,double D_l,double D_ls);
 
 private:
   const double d2r = 0.017453; // degrees to radians
@@ -50,7 +51,6 @@ private:
   void ga2eq(double& ra_deg,double& dec_deg,double l_deg,double b_deg);
   double getUniform(double a,double b);
 
-  void velCMB(double ra_deg,double dec_deg,double& v_cmb,double& phi_cmb,double z_l,double D_l,double D_ls);
   double velPec(double sigma_l,double sigma_s,double z_l,double z_s,double D_l,double D_s);
   double velDisp(double sigma_disp,double e,double z_l,double D_s,double D_l);
 };
