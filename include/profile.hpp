@@ -12,9 +12,9 @@ struct parsSSdisc {
 };
 
 struct parsParametric {
-  double s0;
+  double r0;
   double l0;
-  double n;
+  double nu;
 };
 
 struct factoryProfilePars {
@@ -189,9 +189,9 @@ public:
   BaseProfile* createProfileFromMap(std::map<std::string,std::string> input){
     if( input["type"] == "parametric" ){
       parsParametric pars;
-      pars.s0 = std::stof(input["s0"]);
+      pars.r0 = std::stof(input["r0"]);
       pars.l0 = std::stof(input["l0"]);
-      pars.n  = std::stof(input["n"]);
+      pars.nu = std::stof(input["nu"]);
 
       if( input["shape"] == "uniform" ){
 	return new UniformDisc(std::stof(input["pixSizePhys"]),pars,std::stof(input["lrest"]),std::stof(input["incl"]),std::stof(input["orient"]));

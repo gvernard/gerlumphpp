@@ -29,8 +29,8 @@ BaseProfile::BaseProfile(const BaseProfile& other){
   }
 }
 double BaseProfile::sizeParametric(parsParametric pars,double lrest){
-  // s0 in [10^14 cm], l0 and lrest in [nm]
-  double r = pars.s0*pow(lrest/pars.l0,pars.n);
+  // r0 in [10^14 cm], l0 and lrest in [nm]
+  double r = pars.r0*pow(lrest/pars.l0,pars.nu);
   return r; // in [10^14 cm]
 }
 double BaseProfile::sizeSS(parsSSdisc pars,double lrest){

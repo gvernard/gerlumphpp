@@ -62,7 +62,6 @@ public:
   int left;   // left margin in pixels
   int right;  // right margin in pixels
 
-
   EffectiveMap(int offset,MagnificationMap* map);
   EffectiveMap(double d_offset,MagnificationMap* map);
   EffectiveMap(int top,int bottom,int left,int right,MagnificationMap* map);
