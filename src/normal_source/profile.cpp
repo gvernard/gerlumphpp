@@ -28,15 +28,15 @@ BaseProfile::BaseProfile(const BaseProfile& other){
     this->data[i] = other.data[i];
   }
 }
-double BaseProfile::sizeParametric(parsParametric pars,double lrest){
+double BaseProfile::sizeParametric(double r0,double l0,double nu,double lrest){
   // r0 in [10^14 cm], l0 and lrest in [nm]
-  double r = pars.r0*pow(lrest/pars.l0,pars.nu);
+  double r = r0*pow(lrest/l0,nu);
   return r; // in [10^14 cm]
 }
-double BaseProfile::sizeSS(parsSSdisc pars,double lrest){
+double BaseProfile::sizeSS(double mbh,double fedd,double eta,double lrest){
   double a = pow(lrest,4.0);
-  double b = pow(pars.mbh,2.0);
-  double c = pars.fedd/pars.eta;
+  double b = pow(mbh,2.0);
+  double c = fedd/eta;
   double r = 0.0097*pow(a*b*c,1.0/3.0); // in [10^14 cm]
 }
 void BaseProfile::project(int N,double* x,double* y){
@@ -103,18 +103,11 @@ UniformDisc::UniformDisc(double pixSizePhys,double R,double incl,double orient) 
   generateValues();
   normalize();
 }
-UniformDisc::UniformDisc(double pixSizePhys,parsParametric pars,double lrest,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  this->R = sizeParametric(pars,lrest);
-  generateValues();
-  normalize();
-}
-UniformDisc::UniformDisc(double pixSizePhys,parsSSdisc pars,double lrest,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  this->R = sizeSS(pars,lrest);
-  generateValues();
-  normalize();
+double UniformDisc::setByHalfRadius(double rhalf){
+  return 0.707*rhalf;
 }
 double UniformDisc::getHalfRadius(){
-  return 0.707*this->R;
+  return this->R/0.707;
 }
 void UniformDisc::generateValues(){
   this->Nx = 2 * (3+(int) ceil(this->R/this->pixSizePhys)); // x2 the disc radius + 3 pixels
@@ -153,15 +146,8 @@ Gaussian::Gaussian(double pixSizePhys,double sdev,double incl,double orient) : B
   generateValues();
   normalize();
 }
-Gaussian::Gaussian(double pixSizePhys,parsParametric pars,double lrest,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  this->sdev = sizeParametric(pars,lrest);
-  generateValues();
-  normalize();
-}
-Gaussian::Gaussian(double pixSizePhys,parsSSdisc pars,double lrest,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  this->sdev = sizeSS(pars,lrest);
-  generateValues();
-  normalize();
+double Gaussian::setByHalfRadius(double rhalf){
+  return rhalf/1.18;
 }
 double Gaussian::getHalfRadius(){
   return 1.18*this->sdev;
@@ -202,17 +188,9 @@ GaussianHole::GaussianHole(double pixSizePhys,double sdev,double Rin,double incl
   generateValues();
   normalize();
 }
-GaussianHole::GaussianHole(double pixSizePhys,parsParametric pars,double lrest,double Rin,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  this->sdev = sizeParametric(pars,lrest);
-  this->Rin = Rin;
-  generateValues();
-  normalize();
-}
-GaussianHole::GaussianHole(double pixSizePhys,parsSSdisc pars,double lrest,double Rin,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  this->sdev = sizeSS(pars,lrest);
-  this->Rin = Rin;
-  generateValues();
-  normalize();
+double GaussianHole::setByHalfRadius(double rhalf,double Rin){
+  double dum = (pow(rhalf,2.0) - pow(Rin,2.0))/(2.0*log(2.0));
+  return sqrt(dum);
 }
 double GaussianHole::getHalfRadius(){
   double dum = 2.0*log(2.0)*pow(this->sdev,2.0) + pow(this->Rin,2.0);
@@ -254,6 +232,9 @@ ThermalHole::ThermalHole(double pixSizePhys,double Rin,double incl,double orient
   this->Rin = Rin;
   generateValues();
   normalize();
+}
+double ThermalHole::setByHalfRadius(double rhalf){
+  return rhalf/4.0;
 }
 double ThermalHole::getHalfRadius(){
   return 4.0*this->Rin;
@@ -297,6 +278,9 @@ Wavy::Wavy(double pixSizePhys,double a,double b,double incl,double orient) : Bas
   generateValues();
   normalize();
 }
+double Wavy::setByHalfRadius(double rhalf,int node){
+  return node*M_PI/(2.0*rhalf);
+}
 double Wavy::getHalfRadius(){
   return this->node*M_PI/(2.0*this->b);
 }
@@ -335,6 +319,9 @@ Exponential::Exponential(double pixSizePhys,double sigma,double incl,double orie
   this->sigma = sigma;
   generateValues();
   normalize();
+}
+double Exponential::setByHalfRadius(double rhalf){
+  return 0.4106*rhalf;
 }
 double Exponential::getHalfRadius(){
   return this->sigma/0.4106;
@@ -495,44 +482,4 @@ void Custom::binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
     this->data[i] = this->data[i]/((double) bin_counts[i]);
   }
   free(bin_counts);
-}
-
-
-
-//////////////////////// CLASS IMPLEMENTATION: Gaussian lamp-post ////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-GaussianLP::GaussianLP(double pixSizePhys,double sdev,int t0,double* f,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  this->sdev = sdev;
-  this->t0 = t0;
-  this->f = f;
-  generateValues();
-  normalize();
-}
-double GaussianLP::getHalfRadius(){
-  return 1.18*this->sdev;
-}
-void GaussianLP::generateValues(){
-  double Rhalf = this->getHalfRadius();
-  this->Nx = (int) ceil(4.0*Rhalf/this->pixSizePhys); // width is equal to x4 the half light radius
-  this->Ny = (int) ceil(4.0*Rhalf/this->pixSizePhys); // height is equal to x4 the half light radius
-  makeEven(this->Nx);
-  makeEven(this->Ny);
-  this->data  = (double*) calloc(this->Nx*this->Ny,sizeof(double));
-  this->width  = this->pixSizePhys*this->Nx;
-  this->height = this->pixSizePhys*this->Ny;
-
-  // create x,y grid
-  double* x = (double*) malloc(this->Nx*this->Ny*sizeof(double));
-  double* y = (double*) malloc(this->Nx*this->Ny*sizeof(double));
-  this->createGrid(x,y);
-
-  // set the values
-  double s = 2*pow(this->sdev,2);
-  for(int i=0;i<this->Nx*this->Ny;i++){
-    double r = hypot(x[i],y[i]);
-    this->data[i] = exp(-r*r/s);
-  }
-
-  free(x);
-  free(y);
 }

@@ -5,34 +5,6 @@
 #include <map>
 #include "image.hpp"
 
-struct parsSSdisc {
-  double mbh;
-  double fedd;
-  double eta;
-};
-
-struct parsParametric {
-  double r0;
-  double l0;
-  double nu;
-};
-
-struct factoryProfilePars {
-  double pixSizePhys;
-  
-  std::string type;
-  std::string shape;
-  double incl;
-  double orient;
-  double lrest;
-
-  parsParametric pars_parametric;
-
-  parsSSdisc pars_ssdisc;
-
-  std::string filename;
-  double profPixSizePhys;
-};
 
 //////////////////////// CLASS DEFINITION: BaseProfile ////////////////////////
 class BaseProfile : public Image {
@@ -46,8 +18,8 @@ public:
   BaseProfile(const BaseProfile& other);
   virtual void generateValues() = 0;
   virtual double getHalfRadius() = 0;
-  double sizeParametric(parsParametric pars,double lrest);
-  double sizeSS(parsSSdisc pars,double lrest);
+  static double sizeParametric(double r0,double l0,double nu,double lrest);
+  static double sizeSS(double mbh,double fedd,double eta,double lrest);
 protected:
   void makeEven(int& N);
   void createGrid(double* x,double* y);
@@ -62,21 +34,9 @@ class UniformDisc : public BaseProfile {
 public:
   double R; // the radius of the disc, in [10^14 cm]
   UniformDisc(double pixSizePhys,double R,double incl,double orient);
-  UniformDisc(double pixSizePhys,parsParametric pars,double lrest,double incl,double orient);
-  UniformDisc(double pixSizePhys,parsSSdisc pars,double lrest,double incl,double orient);
   void generateValues();
   double getHalfRadius();
-};
-
-//////////////////////// CLASS DEFINITION: Gaussian lamp-post ////////////////////////
-class GaussianLP : public BaseProfile {
-public:
-  double sdev; // this is equal to sdev, in [10^14 cm]
-  int t0;
-  double* f;
-  GaussianLP(double pixSizePhys,double sdev,int t0,double* f,double incl,double orient);
-  void generateValues();
-  double getHalfRadius();
+  static double setByHalfRadius(double rhalf);
 };
 
 //////////////////////// CLASS DEFINITION: Gaussian ////////////////////////
@@ -84,10 +44,9 @@ class Gaussian : public BaseProfile {
 public:
   double sdev; // this is equal to sdev, in [10^14 cm]
   Gaussian(double pixSizePhys,double sdev,double incl,double orient);
-  Gaussian(double pixSizePhys,parsParametric pars,double lrest,double incl,double orient);
-  Gaussian(double pixSizePhys,parsSSdisc pars,double lrest,double incl,double orient);
   void generateValues();
   double getHalfRadius();
+  static double setByHalfRadius(double rhalf);
 };
 
 //////////////////////// CLASS DEFINITION: GaussianHole ////////////////////////
@@ -96,10 +55,9 @@ public:
   double sdev; // this is equal to sdev, in [10^14 cm]
   double Rin;  // same units as sdev
   GaussianHole(double pixSizePhys,double sdev,double Rin,double incl,double orient);
-  GaussianHole(double pixSizePhys,parsParametric pars,double lrest,double Rin,double incl,double orient);
-  GaussianHole(double pixSizePhys,parsSSdisc pars,double lrest,double Rin,double incl,double orient);
   void generateValues();
   double getHalfRadius();
+  static double setByHalfRadius(double rhalf,double Rin);
 };
 
 //////////////////////// CLASS DEFINITION: ThermalHole ////////////////////////
@@ -109,6 +67,7 @@ public:
   ThermalHole(double pixSizePhys,double Rin,double incl,double orient);
   void generateValues();
   double getHalfRadius();
+  static double setByHalfRadius(double rhalf);
 };
 
 //////////////////////// CLASS DEFINITION: Wavy ////////////////////////
@@ -120,6 +79,7 @@ public:
   Wavy(double pixSizePhys,double a,double b,double incl,double orient);
   void generateValues();
   double getHalfRadius();
+  static double setByHalfRadius(double rhalf,int node);
 };
 
 //////////////////////// CLASS DEFINITION: Exponential /////////////////
@@ -129,6 +89,7 @@ public:
   Exponential(double pixSizePhys,double sigma,double incl,double orient);
   void generateValues();
   double getHalfRadius();
+  static double setByHalfRadius(double rhalf);
 };
 
 //////////////////////// CLASS DEFINITION: Custom //////////////////////
@@ -156,72 +117,50 @@ public:
     return &dum;
   }
 
-  BaseProfile* createProfile(factoryProfilePars input){
-    if( input.type == "parametric" ){
-
-      if( input.shape == "uniform" ){
-	return new UniformDisc(input.pixSizePhys,input.pars_parametric,input.lrest,input.incl,input.orient);
-      } else if( input.shape == "gaussian" ){
-	return new Gaussian(input.pixSizePhys,input.pars_parametric,input.lrest,input.incl,input.orient);
-      } else {
-	return NULL;
-      }
-
-    } else if( input.type == "ss_disc" ){
-      
-      if( input.shape == "uniform" ){
-	return new UniformDisc(input.pixSizePhys,input.pars_ssdisc,input.lrest,input.incl,input.orient);
-      } else if( input.shape == "gaussian" ){
-	return new Gaussian(input.pixSizePhys,input.pars_ssdisc,input.lrest,input.incl,input.orient);
-      } else {
-	return NULL;
-      }
-
-    } else if( input.type == "custom" ){
-
-      return new Custom(input.pixSizePhys,input.filename,input.profPixSizePhys,input.incl,input.orient);
-
+  BaseProfile* createProfileFromPars(std::map<std::string,std::string> input){
+    if( input["shape"] == "uniform" ){
+      return new UniformDisc(std::stof(input["pixSizePhys"]),std::stof(input["R"]),std::stof(input["incl"]),std::stof(input["orient"]));
+    } else if( input["shape"] == "gaussian" ){
+      return new Gaussian(std::stof(input["pixSizePhys"]),std::stof(input["sdev"]),std::stof(input["incl"]),std::stof(input["orient"]));
+    } else if( input["shape"] == "gaussian_hole" ){
+      return new GaussianHole(std::stof(input["pixSizePhys"]),std::stof(input["sdev"]),std::stof(input["Rin"]),std::stof(input["incl"]),std::stof(input["orient"]));
+    } else if( input["shape"] == "thermal_hole" ){
+      return new ThermalHole(std::stof(input["pixSizePhys"]),std::stof(input["Rin"]),std::stof(input["incl"]),std::stof(input["orient"]));
+    } else if( input["shape"] == "wavy" ){
+      return new Wavy(std::stof(input["pixSizePhys"]),std::stof(input["a"]),std::stof(input["b"]),std::stof(input["incl"]),std::stof(input["orient"]));
+    } else if( input["shape"] == "exponential" ){
+      return new Exponential(std::stof(input["pixSizePhys"]),std::stof(input["sigma"]),std::stof(input["incl"]),std::stof(input["orient"]));      
+    } else if( input["shape"] == "custom" ){
+      return new Custom(std::stof(input["pixSizePhys"]),input["filename"],std::stof(input["profPixSizePhys"]),std::stof(input["incl"]),std::stof(input["orient"]));      
     } else {
       return NULL;
     }
   }
 
-  BaseProfile* createProfileFromMap(std::map<std::string,std::string> input){
-    if( input["type"] == "parametric" ){
-      parsParametric pars;
-      pars.r0 = std::stof(input["r0"]);
-      pars.l0 = std::stof(input["l0"]);
-      pars.nu = std::stof(input["nu"]);
-
-      if( input["shape"] == "uniform" ){
-	return new UniformDisc(std::stof(input["pixSizePhys"]),pars,std::stof(input["lrest"]),std::stof(input["incl"]),std::stof(input["orient"]));
-      } else if( input["shape"] == "gaussian" ){
-	return new Gaussian(std::stof(input["pixSizePhys"]),pars,std::stof(input["lrest"]),std::stof(input["incl"]),std::stof(input["orient"]));
-      } else {
-	return NULL;
-      }
-
-    } else if( input["type"] == "ss_disc" ){
-      parsSSdisc pars;
-      pars.mbh  = std::stof(input["mbh"]);
-      pars.eta  = std::stof(input["eta"]);
-      pars.fedd = std::stof(input["fedd"]);
-      
-      if( input["shape"] == "uniform" ){
-	return new UniformDisc(std::stof(input["pixSizePhys"]),pars,std::stof(input["lrest"]),std::stof(input["incl"]),std::stof(input["orient"]));
-      } else if( input["shape"] == "gaussian" ){
-	return new Gaussian(std::stof(input["pixSizePhys"]),pars,std::stof(input["lrest"]),std::stof(input["incl"]),std::stof(input["orient"]));
-      } else {
-	return NULL;
-      }
-
-    } else if( input["type"] == "custom" ){
-
-      return new Custom(std::stof(input["pixSizePhys"]),input["filename"],std::stof(input["profPixSizePhys"]),std::stof(input["incl"]),std::stof(input["orient"]));
-
+  BaseProfile* createProfileFromHalfRadius(std::map<std::string,std::string> input){
+    if( input["shape"] == "uniform" ){
+      double R = UniformDisc::setByHalfRadius(std::stof(input["rhalf"]));
+      return new UniformDisc(std::stof(input["pixSizePhys"]),R,std::stof(input["incl"]),std::stof(input["orient"]));
+    } else if( input["shape"] == "gaussian" ){
+      double sdev = Gaussian::setByHalfRadius(std::stof(input["rhalf"]));
+      return new Gaussian(std::stof(input["pixSizePhys"]),sdev,std::stof(input["incl"]),std::stof(input["orient"]));
+    } else if( input["shape"] == "gaussian_hole" ){
+      double sdev = GaussianHole::setByHalfRadius(std::stof(input["rhalf"]),std::stof(input["Rin"]));
+      return new GaussianHole(std::stof(input["pixSizePhys"]),sdev,std::stof(input["Rin"]),std::stof(input["incl"]),std::stof(input["orient"]));
+    } else if( input["shape"] == "thermal_hole" ){
+      double Rin = ThermalHole::setByHalfRadius(std::stof(input["rhalf"]));
+      return new ThermalHole(std::stof(input["pixSizePhys"]),Rin,std::stof(input["incl"]),std::stof(input["orient"]));
+    } else if( input["shape"] == "wavy" ){
+      double b = Wavy::setByHalfRadius(std::stof(input["rhalf"]),3); // for 3 nodes
+      return new Wavy(std::stof(input["pixSizePhys"]),std::stof(input["a"]),b,std::stof(input["incl"]),std::stof(input["orient"]));
+    } else if( input["shape"] == "exponential" ){
+      double sigma = Exponential::setByHalfRadius(std::stof(input["rhalf"]));
+      return new Exponential(std::stof(input["pixSizePhys"]),sigma,std::stof(input["incl"]),std::stof(input["orient"]));      
+    } else if( input["shape"] == "custom" ){
+      return new Custom(std::stof(input["pixSizePhys"]),input["filename"],std::stof(input["profPixSizePhys"]),std::stof(input["incl"]),std::stof(input["orient"]));      
     } else {
       return NULL;
-    }
+    }      
   }
 
 private:
