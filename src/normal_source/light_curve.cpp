@@ -303,7 +303,7 @@ void LightCurveCollection::extractFull(){
   for(int i=0;i<this->Ncurves;i++){
     double Dx   = this->B[i].x - this->A[i].x;
     double Dy   = this->B[i].y - this->A[i].y;
-    int Nsamples = ceil(hypot(Dy,Dx)+0.5);
+    int Nsamples = ceil(hypot(Dy,Dx)) + 1.0; // this is to include the end point B
     double phi = atan2(Dy,Dx);
 
     this->lightCurves[i] = new LightCurve(Nsamples);
@@ -333,7 +333,7 @@ void LightCurveCollection::extractSampled(std::vector<double> v,double dt,double
     int dl   = v[i]*dt*this->vfactor/this->pixSizePhys;
     int Nsamples = floor(Lmax/dl);
     double phi = atan2(Di,Dj);
-
+    
     this->lightCurves[i] = new LightCurve(Nsamples);
 
     std::vector<double> length(Nsamples); // in pixels (but can be decimal number as well)
