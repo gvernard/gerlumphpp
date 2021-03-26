@@ -104,10 +104,10 @@ UniformDisc::UniformDisc(double pixSizePhys,double R,double incl,double orient) 
   normalize();
 }
 double UniformDisc::setByHalfRadius(double rhalf){
-  return 0.707*rhalf;
+  return sqrt(2.0)*rhalf;
 }
 double UniformDisc::getHalfRadius(){
-  return this->R/0.707;
+  return this->R/sqrt(2.0);
 }
 void UniformDisc::generateValues(){
   this->Nx = 2 * (3+(int) ceil(this->R/this->pixSizePhys)); // x2 the disc radius + 3 pixels
