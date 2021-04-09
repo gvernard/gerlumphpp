@@ -46,6 +46,7 @@ public:
   MagnificationMap(std::string id,double Rein);
   MagnificationMap(const MagnificationMap& other);
 
+  static double getPixSizePhys(std::string id,double Rein);
   Mpd getFullMpd();
   Mpd getBinnedMpd(int Nbins);
   void convolve(Kernel* kernel,EffectiveMap* emap);

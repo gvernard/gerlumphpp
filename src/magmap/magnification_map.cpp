@@ -64,6 +64,18 @@ MagnificationMap::MagnificationMap(const MagnificationMap& other):path(other.pat
 }
 
 
+double MagnificationMap::getPixSizePhys(std::string id,double Rein){
+  // Read map metadata
+  std::string file = MAP_PATH + id + "/mapmeta.dat";
+  std::ifstream myfile(file.c_str());
+  double avgmu,avgN,Nx,width;
+  myfile >> avgmu >> avgN;
+  myfile >> Nx; // it is an int, but it doesn't matter here
+  myfile >> width;
+  return Rein*width/Nx; // in units of [10^14 cm]
+}
+
+
 EffectiveMap::EffectiveMap(int offset,MagnificationMap* map){
   this->top    = offset;
   this->bottom = offset;
