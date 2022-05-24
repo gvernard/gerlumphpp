@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <fstream>
+#include <limits>
 
 LightCurveCollection::LightCurveCollection(int Ncurves){
   this->Ncurves = Ncurves;
