@@ -40,7 +40,7 @@ public:
   point* A; // initial location of the light curves in EffectiveMap pixels (shortened by the offset)
   point* B; // final location of the light curves in EffectiveMap pixels (shortened by the offset)
   LightCurve** lightCurves;
-   double pixSizePhys;
+  double pixSizePhys;
   int Nx; // width of the effective map from which the light curves will be exracted
   int Ny; // height of the effective map from which the light curves will be exracted
   MagnificationMap* emap;
