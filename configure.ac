@@ -49,7 +49,13 @@ fi
 ##########################################################################
 AC_ARG_ENABLE([gpu],
 	[AS_HELP_STRING([--enable-gpu],[replace convolutions on the CPU (fftw) by the GPU (cufft)])],
-	[GPU_SET=1],
+	[
+	if test "$enable_gpu" = "no"; then
+	   GPU_SET=0
+	else
+	   GPU_SET=1
+	fi
+	],
 	[GPU_SET=0])
 AM_CONDITIONAL([WITH_GPU], [test $GPU_SET = 1])
     
