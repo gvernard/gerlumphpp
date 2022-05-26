@@ -46,6 +46,23 @@ fi
 ##########################################################################
 
 
+##########################################################################
+AC_ARG_ENABLE([gpu],
+	[AS_HELP_STRING([--enable-gpu],[replace convolutions on the CPU (fftw) by the GPU (cufft)])],
+	[GPU_SET=1],
+	[GPU_SET=0])
+AM_CONDITIONAL([WITH_GPU], [test $GPU_SET = 1])
+    
+CUDA_CFLAGS="-std=c++11 --compiler-options '-fPIC' -Wno-deprecated-gpu-targets"
+CUDA_LIBS="-lcudart -lcufft"
+NVCC="nvcc"
+
+AC_SUBST(CUDA_CFLAGS)
+AC_SUBST(CUDA_LIBS)
+AC_SUBST(NVCC)
+##########################################################################
+
+
 
 # distribute the changed variables among the Makefiles
 AC_SUBST([MAP_PATH])
