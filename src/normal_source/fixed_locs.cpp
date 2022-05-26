@@ -95,7 +95,7 @@ double FixedLocationCollection::checkOverlap(int profRadius){
       double overlap = (theta-sin(theta))/pi;
       return overlap;
     } else {
-      return 0;
+      return 0.0;
     }
   } else if( this->type == "random" ){
     double avg_overlap = 0;
@@ -115,6 +115,8 @@ double FixedLocationCollection::checkOverlap(int profRadius){
     int N_unique = (this->Nlocs-1)*this->Nlocs/2;
     avg_overlap /= N_unique*pi;
     return avg_overlap;
+  } else {
+    return 0.0;
   }
 }
 

@@ -38,6 +38,7 @@ double BaseProfile::sizeSS(double mbh,double fedd,double eta,double lrest){
   double b = pow(mbh,2.0);
   double c = fedd/eta;
   double r = 0.0097*pow(a*b*c,1.0/3.0); // in [10^14 cm]
+  return r;
 }
 void BaseProfile::project(int N,double* x,double* y){
   double fac = M_PI/180.0; // degrees to radians conversion

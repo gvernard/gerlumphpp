@@ -28,7 +28,7 @@ MagnificationMap::MagnificationMap(std::string id,double Rein):path(MAP_PATH) {
   file = this->path + this->id + "/map.bin";
   FILE* ptr_myfile = fopen(file.data(),"rb");
   int* imap = (int*) calloc(this->Nx*this->Ny,sizeof(int));
-  fread(imap,sizeof(int),this->Nx*this->Ny,ptr_myfile);
+  size_t dum = fread(imap,sizeof(int),this->Nx*this->Ny,ptr_myfile);
   fclose(ptr_myfile);
   
   double factor = fabs(this->avgmu/this->avgN);
