@@ -28,6 +28,27 @@ BaseProfile::BaseProfile(const BaseProfile& other){
     this->data[i] = other.data[i];
   }
 }
+double BaseProfile::getSize(std::map<std::string,std::string> pars,double lrest){
+  // If the temperature profile is parameteric or SS then calculate the half-light radius.
+  // If it is simply a vector of given half-light radii, then just lrest is the rhalf anyway.
+  double rhalf;
+  if( pars["type"] == "parametric" ){
+    double r0 = std::stof(pars["r0"]);
+    double l0 = std::stof(pars["l0"]);
+    double nu = std::stof(pars["nu"]);
+    rhalf = BaseProfile::sizeParametric(r0,l0,nu,lrest);
+  } else if( pars["type"] == "ss_disc" ){
+    double mbh  = std::stof(pars["mbh"]);
+    double fedd = std::stof(pars["fedd"]);
+    double eta  = std::stof(pars["eta"]);
+    rhalf = BaseProfile::sizeSS(mbh,fedd,eta,lrest);
+  } else if( pars["type"] == "vector" ){
+    rhalf = lrest;
+  } else {
+    rhalf = 0.0; // throw an exception
+  }
+  return rhalf;
+}
 double BaseProfile::sizeParametric(double r0,double l0,double nu,double lrest){
   // r0 in [10^14 cm], l0 and lrest in [nm]
   double r = r0*pow(lrest/l0,nu);

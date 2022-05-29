@@ -17,7 +17,8 @@ public:
   BaseProfile(double pixSizePhys,double incl,double orient);
   BaseProfile(const BaseProfile& other);
   virtual void generateValues() = 0;
-  virtual double getHalfRadius() = 0;
+  virtual double getHalfRadius() = 0; // for each child profile
+  static double getSize(std::map<std::string,std::string> pars,double lrest);
   static double sizeParametric(double r0,double l0,double nu,double lrest);
   static double sizeSS(double mbh,double fedd,double eta,double lrest);
 protected:
