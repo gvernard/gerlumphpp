@@ -10,20 +10,13 @@ libgerlumph_la_SOURCES= \
 	src/normal_source/profile.cpp \
 	src/normal_source/velocities.cpp
 
+libgerlumph_la_CXXFLAGS = -std=c++11 -fPIC -g -frounding-math
 
-
-libgerlumph_la_CPPFLAGS = \
-	-std=c++11 \
-	-fPIC \
-	-Iinclude
-
-#libvkl_la_LDFLAGS=-shared -fPIC 
-#libvkl_la_LIBADD = -lgfortran -lCCfits -lcfitsio -lgmp -lCGAL
 
 
 if WITH_GPU
 
-libgerlumph_la_LIBADD = libmagmap.la libgpu.la
+libgerlumph_la_LIBADD = libmagmap.la libgpu.la -lCCfits -lcfitsio -lpng
 noinst_LTLIBRARIES = libmagmap.la libgpu.la
 
 # GPU functions
@@ -40,26 +33,21 @@ libgpu_la_LIBADD  = $(CUDA_LIBS)
 
 else
 
-libgerlumph_la_LIBADD = libmagmap.la libcpu.la
+libgerlumph_la_LIBADD = libmagmap.la libcpu.la -lCCfits -lcfitsio -lpng
 noinst_LTLIBRARIES = libmagmap.la libcpu.la
 
 # CPU functions
 libcpu_la_SOURCES = src/cpu_gpu/cpu_functions.cpp
-libcpu_la_CPPFLAGS = \
-	-std=c++11 \
-	-fPIC \
-	-Iinclude
+libcpu_la_CXXFLAGS = -std=c++11	-fPIC -g -frounding-math
 libcpu_la_LIBADD = -lfftw3
 
 endif
 
+
+
 # MAP PATH
 libmagmap_la_SOURCES = src/magmap/magnification_map.cpp
-libmagmap_la_CPPFLAGS = \
-	-std=c++11 \
-	-fPIC \
-	-Iinclude \
-	-DMAP_PATH='"@MAP_PATH@"'
+libmagmap_la_CXXFLAGS =	-std=c++11 -fPIC -g -frounding-math -DMAP_PATH='"@MAP_PATH@"'
 
 
 
