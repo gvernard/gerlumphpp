@@ -12,6 +12,7 @@ libgerlumph_la_SOURCES= \
 
 libgerlumph_la_CXXFLAGS = -std=c++11 -fPIC -g -frounding-math
 
+include_HEADERS = include/fixed_locs.hpp  include/gerlumph.hpp  include/image.hpp  include/light_curve.hpp  include/magnification_map.hpp  include/mpd.hpp  include/profile.hpp  include/velocities.hpp
 
 
 if WITH_GPU
