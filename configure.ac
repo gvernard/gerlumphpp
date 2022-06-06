@@ -16,35 +16,11 @@ ac_new_CPPFLAGS="-Iinclude"
 ac_new_LDFLAGS=""
 ac_new_LIBS=""
 
-AC_ARG_WITH([cfitsio],
-    [AS_HELP_STRING([--with-cfitsio=prefix],[give the path to the cfitsio library and header files.])],
-    [
-	ac_new_CPPFLAGS+=" -I${withval}/include"
-	ac_new_LDFLAGS+=" -L${withval}/lib"
-	ac_new_LIBS+=" -lcfitsio"
-    ],
-    [
-	AC_CHECK_LIB(cfitsio,main,[],[AC_MSG_ERROR("you need to have the cfitsio library installed.")])
-	AC_CHECK_HEADERS(fitsio.h,[],[AC_MSG_ERROR("you need to have the cfitsio header files installed.")])
-    ])
-
-AC_ARG_WITH([CCfits],
-    [AS_HELP_STRING([--with-CCfits=prefix],[give the path to the CCfits library and header files.])],
-    [
-	ac_new_CPPFLAGS+=" -I${withval}/include"
-	ac_new_LDFLAGS+=" -L${withval}/lib"
-	ac_new_LIBS+=" -lCCfits"
-    ],
-    [
-	AC_CHECK_LIB(CCfits,main,[],[AC_MSG_ERROR("you need to have the CCfits library installed.")])
-	AC_CHECK_HEADERS(CCfits/CCfits.h,[],[AC_MSG_ERROR("you need to have the CCfits header files installed.")])
-    ])
-
 AC_ARG_WITH([fftw3],
     [AS_HELP_STRING([--with-fftw3=prefix],[give the path to the fftw3 library and header files.])],
     [
 	ac_new_CPPFLAGS+=" -I${withval}/include"
-	ac_new_LDFLAGS+=" -L${withval}/lib"
+	ac_new_LDFLAGS+=" -L${withval}/lib -Wl,-rpath -Wl,${withval}/lib"
 	ac_new_LIBS+=" -lfftw3"
     ],
     [
@@ -52,11 +28,35 @@ AC_ARG_WITH([fftw3],
 	AC_CHECK_HEADERS(fftw3.h,[],[AC_MSG_ERROR("you need to have the fftw3 header files installed.")])
     ])
 
+AC_ARG_WITH([CCfits],
+    [AS_HELP_STRING([--with-CCfits=prefix],[give the path to the CCfits library and header files.])],
+    [
+	ac_new_CPPFLAGS+=" -I${withval}/include"
+	ac_new_LDFLAGS+=" -L${withval}/lib -Wl,-rpath -Wl,${withval}/lib"
+	ac_new_LIBS+=" -lCCfits"
+    ],
+    [
+	AC_CHECK_LIB(CCfits,main,[],[AC_MSG_ERROR("you need to have the CCfits library installed.")],[-lcfitsio])
+	AC_CHECK_HEADERS(CCfits/CCfits.h,[],[AC_MSG_ERROR("you need to have the CCfits header files installed.")])
+    ])
+
+AC_ARG_WITH([cfitsio],
+    [AS_HELP_STRING([--with-cfitsio=prefix],[give the path to the cfitsio library and header files.])],
+    [
+	ac_new_CPPFLAGS+=" -I${withval}/include"
+	ac_new_LDFLAGS+=" -L${withval}/lib -Wl,-rpath -Wl,${withval}/lib"
+	ac_new_LIBS+=" -lcfitsio"
+    ],
+    [
+	AC_CHECK_LIB(cfitsio,main,[],[AC_MSG_ERROR("you need to have the cfitsio library installed.")])
+	AC_CHECK_HEADERS(fitsio.h,[],[AC_MSG_ERROR("you need to have the cfitsio header files installed.")])
+    ])
+
 AC_ARG_WITH([png],
     [AS_HELP_STRING([--with-png=prefix],[give the path to the png library and header files.])],
     [
 	ac_new_CPPFLAGS+=" -I${withval}/include"
-	ac_new_LDFLAGS+=" -L${withval}/lib"
+	ac_new_LDFLAGS+=" -L${withval}/lib -Wl,-rpath -Wl,${withval}/lib"
 	ac_new_LIBS+=" -lpng"
     ],
     [
@@ -104,7 +104,7 @@ AC_ARG_ENABLE([gpu],
 	[GPU_SET=0])
 AM_CONDITIONAL([WITH_GPU], [test $GPU_SET = 1])
     
-CUDA_CFLAGS="-std=c++11 --compiler-options '-fPIC' -Wno-deprecated-gpu-targets"
+CUDA_CFLAGS="--compiler-options '-fPIC' -Wno-deprecated-gpu-targets"
 CUDA_LIBS="-lcudart -lcufft"
 NVCC="nvcc"
 
