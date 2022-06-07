@@ -1,50 +1,57 @@
 # gerlumphpp
 
-This is a cpp library of functions to perform various microlensing tasks, e.g. read maps in a given format, doing convolutions, extracting light curves, etc.
-Optionally, the convolutions can be performed on the GPU using cuda.
+This is a C++ library of functions to perform various microlensing tasks, e.g. read maps, perform convolutions, extract light curves, etc.
+Optionally, the convolutions can be performed on the GPU using cuda, which leads to a approx. 5 times speedup.
 
 
 
 ## Getting Started
 ### Prerequisites
 
-There is a number of third-party libraries required to install gerlumphpp, namely: **fftw3**, **cfitsio**, **CCfits**, and **libpng** (optionally **jsoncpp**).
+There is a number of third-party libraries required to install gerlumphpp, namely: **fftw3**, **cfitsio**, **CCfits**, and **libpng**.
 These are required for the CPU-based version.
-The GPU requires additionally **cuda** (nvcc compiler) and **cufft**.
-For the latter, a root -based system-wide installation is preferred, while the rest can be installed locally.
-The **prerequisites.sh** script takes care of a local installation by replacing the variable **$PREFIX** with your own local path and typing:
-
-```
-bash prerequisites.sh
-```
-
-This script will download and install the CPU-based third-party software required.
-It only requires **cmake** to be already installed -  apretty standard package on Unix-like systems.
-Only two *make install* commands in this script require root permission (sudo), which, however, can be avoided by changing the write permissions on the **$PREFIX** directory.
-
-As a final step, the environment variables **CPATH**, **LIBRARY_PATH**, and **LD_LIBRARY_PATH** at the end of the script need to be included somewhere in the user's path, e.g. in a .bashrc file, or equivalent.
-
+To enable GPU support **cuda** (the nvcc compiler) and **cufft** are required as well.
+For the latter two, a root-based system-wide installation is preferred, while the rest can be installed locally.
+Finally, **autotools** are required to perform the installation (the autoreconf command). 
 
 
 ### Installing
 
-To install gerlumphpp one **must** specify an absolute path to magnification maps by passing the **MAP_PATH** argument to make.
-Then, specify which version of the library to build by typing **cpu** or **gpu**.
-An example make is (at the root directory of gerlumphpp):
+To install gerlumphpp one needs to call `autoreconf -i' and then the usual './configure, make, make install'.
+However, there are some mandatory options that need to be passed to the configure script.
+
+- --with-map-path: the user must specify the absolute path to a directory containing GERLUMPH maps
+- --enable-gpu: either 'yes' or 'no', that will compile the library with or without GPU support
+
+In addtion, if the required third-party libraries listed above are not installed in a standard system location, they will need to be explicitly provided.
+This is possible via '--with-<library_name>=/path/to/library' options passed to the configure script.
+An example call to the configure script could look like the following:
 
 ```
-make MAP_PATH=/path/to/maps/without/quotes/and/ending/with/slash/ cpu
+./configure --prefix=/path/to/installation/of/gerlumphpp --with-fftw3=/path/to/libraries/fftw --with-cfitsio=/path/to/libraries/cfitsio --with-CCfits=/path/to/libraries/CCfits --with-png=/path/to/libraries/libpng --enable-gpu=yes --with-map-path=/path/to/gerlumph/maps/
 ```
 
-To specify a different **MAP_PATH** one has to call "make clean" first.
 
-Finally, to be able to compile applications using gerlumphpp without specifying the path to *include* and *lib*, add the following in your .bashrc (similarly for other shells):
+### Enabling/disabling GPU support
+
+One may need to re-compile gerlumphpp at some point because the location of the third-party libraries or of the GERLUMPH maps has changed.
+Most commonly though, one may want to enable/disable GPU support depending on the system configuration.
+In this case, the same steps as above need to be followed with the appropriate options set.
+In fact, one can have two versions of the library, one for the CPU and one for the GPU, simultaneously present in the system installed at different locations. 
+
+
+### Finalizing
+
+For convenience, in order to be able to compile programs that use gerlumphpp without the need to explicitly specify the path to the headers and the libarry (e.g. the -I, -L, and -Wl,-rpath options to the g++ compiler and linker), one can define the following environment variables:
 
 ```
-CPATH=$CPATH:/path/to/gerlumphpp/include
-LIBRARY_PATH=$LIBRARY_PATH:/path/to/gerlumphpp/lib
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/gerlumphpp/lib
+CPATH=$CPATH:/path/to/installation/of/gerlumphpp/include
+LIBRARY_PATH=$LIBRARY_PATH:/path/to/installation/of/gerlumphpp/lib
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/installation/of/gerlumphpp/lib
 ```
+
+For the bash shell, one can export these variables from within the .bashrc file.
+
 
 
 
@@ -53,29 +60,10 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/gerlumphpp/lib
 ## Running the tests
 
 In tests/example.cpp there is a complete example of reading a map, convolving with extended source light profiles, and extracting light curves or magnification probability distributions.
-To compile the tests type:
-
-```
-make tests_cpu
-```
-or
-```
-make tests_gpu
-```
-according to which version of the library you have compiled.
-
 To run the example, [download]() a map from GERLUMPH and place it at your specified **MAP_PATH**.
 You will need a directory named "12345" (for this specific example, but it can be whatever) that contains the *map.bin* and *mapmeta.dat* files.
-Then type:
-
-```
-cd tests
-./example
-```
-
-and the example code will produce a list of output images and data.
-
-
+Then compile the example linking it properly with the gerlumphpp library and run it.
+The example program will produce a list of output images and additional data like light curves.
 
 
 
