@@ -2,6 +2,7 @@ lib
 *.png
 *.fits
 tests/example
+configure_command.txt
 
 libtool
 aux-dist
@@ -16,6 +17,11 @@ Makefile.in
 /ylwrap
 .deps/
 .dirstamp
+.libs
+_libs
+*.o
+*.lo
+*.la
 
 # http://www.gnu.org/software/autoconf
 

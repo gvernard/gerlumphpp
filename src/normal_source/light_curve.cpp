@@ -319,6 +319,42 @@ void LightCurveCollection::extractFull(){
   }
 }
 
+
+
+
+
+void LightCurveCollection::setLightCurves(std::vector<double> len_frac,std::vector<double>& length,std::vector<double>& cosphi,std::vector<double>& sinphi){
+  this->type = "full";
+  int Nsamples = len_frac.size();
+
+  for(int i=0;i<this->Ncurves;i++){
+    double Dx   = this->B[i].x - this->A[i].x;
+    double Dy   = this->B[i].y - this->A[i].y;
+    double phi = atan2(Dy,Dx);
+    this->lightCurves[i] = new LightCurve(Nsamples);
+    cosphi[i] = cos(phi);
+    sinphi[i] = sin(phi);
+    length[i] = hypot(Dx,Dy);
+  }
+}
+
+void LightCurveCollection::sampleLightCurveTimestep(int tstep,std::vector<double> len_frac,std::vector<double> length,std::vector<double> cosphi,std::vector<double> sinphi){
+  double m,dm,xk,yk;
+
+  for(int i=0;i<this->Ncurves;i++){
+    xk = this->A[i].x + len_frac[tstep]*length[i]*cosphi[i];
+    yk = this->A[i].y + len_frac[tstep]*length[i]*sinphi[i];
+  
+    interpolatePlane(xk,yk,m,dm);
+    
+    this->lightCurves[i]->m[tstep]  = m;
+    this->lightCurves[i]->dm[tstep] = dm;
+  }
+}
+
+
+
+
 void LightCurveCollection::extractSampled(double v,double dt,double tmax){
   std::vector<double> vvec(this->Ncurves);
   std::fill(vvec.begin(),vvec.end(),v); 
@@ -387,9 +423,11 @@ void LightCurveCollection::sampleLightCurve(int index,std::vector<double> length
   double m,dm;
   int Nsamples = length.size();
 
+  double cosphi = cos(phi);
+  double sinphi = sin(phi);
   for(int k=0;k<Nsamples;k++){
-    double xk = this->A[index].x + length[k]*cos(phi);
-    double yk = this->A[index].y + length[k]*sin(phi);
+    double xk = this->A[index].x + length[k]*cosphi;
+    double yk = this->A[index].y + length[k]*sinphi;
   
     interpolatePlane(xk,yk,m,dm);
     

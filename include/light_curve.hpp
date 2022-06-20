@@ -80,6 +80,10 @@ public:
   void extractStrategy(double v,std::vector<double> t);
   void extractStrategy(std::vector<double> v,std::vector<double> t);
 
+  void setLightCurves(std::vector<double> len_frac,std::vector<double>& length,std::vector<double>& cosphi,std::vector<double>& sinphi); // For variable sources
+  void sampleLightCurveTimestep(int tstep,std::vector<double> len_frac,std::vector<double> length,std::vector<double> cosphi,std::vector<double> sinphi); // For variable sources
+
+  
   void writeLocations(const std::string filename);
   void writeCurves(const std::string path,const std::string suffix);
   template<typename mType> void writeCurvesDegraded(const std::string path,const std::string suffix);
