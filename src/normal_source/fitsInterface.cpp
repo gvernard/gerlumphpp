@@ -3,6 +3,7 @@
 #include <CCfits/CCfits>
 #include <valarray>
 
+using namespace gerlumph;
 
 void FitsInterface::readFits(int Nx,int Ny,double* z,const std::string filepath){
   std::unique_ptr<CCfits::FITS> pInfile(new CCfits::FITS(filepath,CCfits::Read,true));

@@ -13,6 +13,8 @@
 
 #include <cufft.h>
 
+using namespace gerlumph;
+
 // These two prototype functions are used only to compile this source code.
 // The 'static' keyword causes their visibility to be limited to the translation unit (this single .cu or .cpp file where they are defined).
 static int myfft2d_r2c(int Nx, int Ny, cufftDoubleReal* data, cufftDoubleComplex* Fdata);

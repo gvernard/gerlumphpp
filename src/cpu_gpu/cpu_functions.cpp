@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cstring>
 
+using namespace gerlumph;
+
 void MagnificationMap::convolve(Kernel* kernel,EffectiveMap* emap){
   double dum1,dum2;
   fftw_plan p1;

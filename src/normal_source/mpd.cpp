@@ -1,5 +1,7 @@
 #include "mpd.hpp"
 
+using namespace gerlumph;
+
 void Mpd::reset(int Nbins){
   free(this->bins);
   free(this->counts);

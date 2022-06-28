@@ -1,5 +1,6 @@
 #include "magnification_map.hpp"
 
+using namespace gerlumph;
 
 MagnificationMap::MagnificationMap():path(MAP_PATH) {
   // do nothing. Just used to define the path.

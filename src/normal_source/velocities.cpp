@@ -3,6 +3,8 @@
 #include <cmath>
 #include <iostream>
 
+using namespace gerlumph;
+
 velocityComponents::velocityComponents(int N){
   this->N = N;
   this->cmb  = (velocity*) malloc(N*sizeof(velocity));

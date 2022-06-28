@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+using namespace gerlumph;
 
 // Definition of static variables:
 // 1st derivatives

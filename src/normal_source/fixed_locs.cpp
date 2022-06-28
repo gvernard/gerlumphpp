@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cstdlib>
 
-
+using namespace gerlumph;
 
 FixedLocationCollection::FixedLocationCollection(int Nlocs,EffectiveMap* emap){
   this->Nlocs = Nlocs;

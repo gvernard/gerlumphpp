@@ -6,24 +6,28 @@
 #include <fstream>
 #include <iomanip>
 
-class Mpd {
-public:
-  int Nbins;
-  double* bins;
-  double* counts;
+namespace gerlumph {
 
-  Mpd(int Nbins){
-    this->Nbins  = Nbins;
-    this->bins   = (double*) calloc(Nbins,sizeof(double));
-    this->counts = (double*) calloc(Nbins,sizeof(double));
-  }
-  ~Mpd(){
-    free(bins);
-    free(counts);
-  }
+  class Mpd {
+  public:
+    int Nbins;
+    double* bins;
+    double* counts;
 
-  void reset(int Nbins);
-  void writeMpd(const std::string filename);
-};
+    Mpd(int Nbins){
+      this->Nbins  = Nbins;
+      this->bins   = (double*) calloc(Nbins,sizeof(double));
+      this->counts = (double*) calloc(Nbins,sizeof(double));
+    }
+    ~Mpd(){
+      free(bins);
+      free(counts);
+    }
 
+    void reset(int Nbins);
+    void writeMpd(const std::string filename);
+  };
+
+}
+  
 #endif /* MPD_HPP */

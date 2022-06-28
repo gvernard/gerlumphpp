@@ -5,6 +5,8 @@
 #include <fstream>
 #include <limits>
 
+using namespace gerlumph;
+
 LightCurveCollection::LightCurveCollection(int Ncurves){
   this->Ncurves = Ncurves;
   this->A = (point*) calloc(Ncurves,sizeof(point));
