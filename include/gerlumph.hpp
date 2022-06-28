@@ -6,6 +6,7 @@
 #include "light_curve.hpp"
 #include "magnification_map.hpp"
 #include "mpd.hpp"
+#include "rectGrid.hpp"
 #include "profile.hpp"
 #include "velocities.hpp"
 

@@ -8,6 +8,8 @@ libgerlumph_la_SOURCES= \
 	src/normal_source/light_curve.cpp \
 	src/normal_source/mpd.cpp \
 	src/normal_source/profile.cpp \
+	src/normal_source/fitsInterface.cpp \
+	src/normal_source/rectGrid.cpp \
 	src/normal_source/velocities.cpp
 
 libgerlumph_la_CPPFLAGS = -std=c++11 -fPIC -g -frounding-math
@@ -20,6 +22,8 @@ include_HEADERS = \
 	include/magnification_map.hpp \
 	include/mpd.hpp \
 	include/profile.hpp \
+	include/fitsInterface.hpp \
+	include/rectGrid.hpp \
 	include/velocities.hpp
 
 

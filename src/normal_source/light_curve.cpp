@@ -344,7 +344,7 @@ void LightCurveCollection::sampleLightCurveTimestep(int tstep,std::vector<double
   for(int i=0;i<this->Ncurves;i++){
     xk = this->A[i].x + len_frac[tstep]*length[i]*cosphi[i];
     yk = this->A[i].y + len_frac[tstep]*length[i]*sinphi[i];
-  
+ 
     interpolatePlane(xk,yk,m,dm);
     
     this->lightCurves[i]->m[tstep]  = m;

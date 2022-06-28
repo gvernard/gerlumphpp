@@ -99,11 +99,13 @@ public:
   Custom(double pixSizePhys,const std::string filename,double profPixSizePhys,double incl,double orient);
   void generateValues(){};
   double getHalfRadius(){
+    // Need to implement the half-ligh radius here
     return 0.0;
   };
-private:
-  void interpolateProfile(int Nxx,int Nyy,double* input,double profPixSizePhys);
-  void binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys);
+  //private:
+  //void newInterpolateProfile(int Nxx,int Nyy,double* input,double profPixSizePhys);
+  //void interpolateProfile(int Nxx,int Nyy,double* input,double profPixSizePhys);
+  //void binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys);
 };
 
 

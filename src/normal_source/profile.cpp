@@ -1,4 +1,5 @@
 #include "profile.hpp"
+#include "rectGrid.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -388,120 +389,30 @@ void Exponential::generateValues(){
 //////////////////////// CLASS IMPLEMENTATION: Custom ////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 Custom::Custom(double pixSizePhys,const std::string filename,double profPixSizePhys,double incl,double orient) : BaseProfile(pixSizePhys,incl,orient) {
-  // Read the profile from .fits format
   std::unique_ptr<CCfits::FITS> pInfile(new CCfits::FITS(filename,CCfits::Read,true));
   CCfits::PHDU& image = pInfile->pHDU();
-  std::valarray<float> tmp;
   image.readAllKeys();
-  image.read(tmp);
-  int Nxx = image.axis(0);
-  int Nyy = image.axis(1);
-  double* input = (double*) calloc(Nxx*Nyy,sizeof(double));
+  int Nxx = (int) image.axis(0);
+  int Nyy = (int) image.axis(1);
 
-  //convert FITS standard (bottom to top) to the one used in this code (top to bottom)
-  for(int i=0;i<Nyy;i++){
-    for(int j=0;j<Nxx;j++){
-      input[i*Nxx+j] = (double) tmp[(Nyy-i-1)*Nxx+j];
-    }
-  }
+  double xmax = Nxx*profPixSizePhys;
+  double ymax = Nyy*profPixSizePhys;
+  RectGrid input_profile(Nxx,Nyy,0,xmax,0,ymax,filename);
+  
+  int newNx = (int) floor(xmax/pixSizePhys);
+  int newNy = (int) floor(ymax/pixSizePhys);
+  RectGrid new_profile = input_profile.embeddedNewGrid(newNx,newNy);
 
-  // Depending on the profile and map pixel sizes in physical units, select whether to interpolate or bin the profile to match the map
-  if( this->pixSizePhys <= profPixSizePhys ){
-    interpolateProfile(Nxx,Nyy,input,profPixSizePhys);
-  } else {
-    binProfile(Nxx,Nyy,input,profPixSizePhys);
-  }
-  free(input);
-
-  normalize();
-}
-void Custom::interpolateProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
-  // Decide on the profile width and height in pixels based on the input profile
-  double dresx = (Nxx-1)*profPixSizePhys/this->pixSizePhys;
-  this->Nx = floor(dresx);
-  double xoffset = (dresx - this->Nx)/2.0;
-  if( this->Nx%2 != 0 ){
-    this->Nx -= 1;
-    xoffset += 0.5;
-  }
-  double dresy = (Nyy-1)*profPixSizePhys/this->pixSizePhys;
-  this->Ny = floor(dresy);
-  double yoffset = (dresy - this->Ny)/2.0;
-  if( this->Ny%2 != 0 ){
-    this->Ny -= 1;
-    yoffset += 0.5;
-  }
-  this->data   = (double*) calloc(this->Nx*this->Ny,sizeof(double));
-  this->width  = this->pixSizePhys*this->Nx;
-  this->height = this->pixSizePhys*this->Ny;
-
-  double x,y,xp,yp,dx,dy,ddx,ddy,w00,w10,w01,w11,f00,f10,f01,f11;
-  int ii,jj;
+  this->Nx = new_profile.Nx;
+  this->Ny = new_profile.Ny;
+  this->width = xmax;
+  this->height = ymax;
+  this->data = (double*) calloc(this->Nx*this->Ny,sizeof(double));
   for(int i=0;i<this->Ny;i++){
-    y  = yoffset+i*this->pixSizePhys;
-    ii = floor( y/profPixSizePhys );
-    yp = ii*profPixSizePhys;
-    dy = y - yp;
-    ddy = (1.0 - dy);
-
     for(int j=0;j<this->Nx;j++){
-      x  = xoffset+j*this->pixSizePhys;
-      jj = floor( x/profPixSizePhys );
-      xp = jj*profPixSizePhys;
-      dx = x - xp;
-      ddx = (1.0 - dx);
-
-      w00 = dx*dy;
-      w10 = dy*ddx;
-      w01 = dx*ddy;
-      w11 = ddx*ddy;
-
-      f00 = input[ii*Nxx+jj];
-      f10 = input[ii*Nxx+jj+1];
-      f01 = input[(ii+1)*Nxx+jj];
-      f11 = input[(ii+1)*Nxx+jj+1];
-
-      this->data[i*this->Nx+j] = f00*w00 + f10*w10 + f01*w01 + f11*w11;
+      this->data[i*this->Nx+j] = new_profile.z[i*this->Nx+j];
     }
   }
-}
-void Custom::binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys){
-  double dresx = (Nxx)*profPixSizePhys/this->pixSizePhys;
-  this->Nx = ceil(dresx);
-  double xoffset = fabs(this->Nx - dresx)*this->pixSizePhys/2.0;
-  if( this->Nx%2 != 0 ){
-    this->Nx += 1;
-    xoffset += 0.5;
-  }
-  double dresy = (Nyy)*profPixSizePhys/this->pixSizePhys;
-  this->Ny = ceil(dresy);
-  double yoffset = fabs(this->Ny - dresy)*this->pixSizePhys/2.0;
-  if( this->Ny%2 != 0 ){
-    this->Ny += 1;
-    yoffset += 0.5;
-  }
-  this->data   = (double*) calloc(this->Nx*this->Ny,sizeof(double));
-  this->width  = this->pixSizePhys*this->Nx;
-  this->height = this->pixSizePhys*this->Ny;
-
-  int* bin_counts = (int*) calloc(this->Nx*this->Ny,sizeof(int));
-  int ii,jj;
-  double x,y;
-  for(int i=0;i<Nyy;i++){
-    y  = yoffset+i*profPixSizePhys;
-    ii = floor( y/this->pixSizePhys );
-
-    for(int j=0;j<Nxx;j++){
-      x  = xoffset+j*profPixSizePhys;
-      jj = floor( x/this->pixSizePhys );
-
-      this->data[ii*this->Nx+jj] += input[i*Nxx+j];
-      bin_counts[ii*this->Nx+jj] += 1;
-    }
-  }
-
-  for(long i=0;i<this->Nx*this->Ny;i++){
-    this->data[i] = this->data[i]/((double) bin_counts[i]);
-  }
-  free(bin_counts);
+  
+  normalize();
 }
