@@ -39,7 +39,7 @@ namespace gerlumph {
     const double l0_deg   = 122.9320; // in deg
     const double two_pi = 2.0*3.14159265358979323846;
 
-    const double v_apex = 387; // km/s
+    const double v_apex = 371; // km/s, updated magnitude from Fixsen et al. 1996
     // We move towards (l,b)=(264.4,48.4) (Kogut et al. 1993), so everything is moving towards the opposite direction
     const double l_dip_deg = 264.4 - 180; // in deg
     const double b_dip_deg = -48.4;  // in deg
