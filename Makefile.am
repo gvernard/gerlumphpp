@@ -35,7 +35,7 @@ noinst_LTLIBRARIES = libmagmap.la libgpu.la
 
 # GPU functions
 .cu.o:
-	$(NVCC) $(CUDA_FLAGS) -o $@ -c $<
+	$(NVCC) $(CUDA_CFLAGS) -o $@ -c $<
 .cu.lo:
 	python $(top_srcdir)/cudalt.py $@ $(NVCC) \
 	--compiler-options=\"$(CFLAGS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \" -c $<

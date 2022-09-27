@@ -10,7 +10,7 @@ Optionally, the convolutions can be performed on the GPU using cuda, which leads
 
 There is a number of third-party libraries required to install gerlumphpp, namely: **fftw3**, **cfitsio**, **CCfits**, and **libpng**.
 These are required for the CPU-based version.
-To enable GPU support **cuda** (the nvcc compiler) and **cufft** are required as well.
+To enable GPU support **cuda** (the nvcc compiler, tested with 11.7, does not work with 11.5 due to a bug) and **cufft** are required as well.
 For the latter two, a root-based system-wide installation is preferred, while the rest can be installed locally.
 Finally, **autotools** are required to perform the installation (the autoreconf command). 
 

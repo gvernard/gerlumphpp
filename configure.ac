@@ -104,7 +104,7 @@ AC_ARG_ENABLE([gpu],
 	[GPU_SET=0])
 AM_CONDITIONAL([WITH_GPU], [test $GPU_SET = 1])
     
-CUDA_CFLAGS="--compiler-options '-fPIC' -Wno-deprecated-gpu-targets"
+CUDA_CFLAGS="-std=c++11 --compiler-options '-fPIC' -Wno-deprecated-gpu-targets"
 CUDA_LIBS="-lcudart -lcufft"
 NVCC="nvcc"
 
