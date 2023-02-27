@@ -99,14 +99,10 @@ namespace gerlumph {
   public:
     Custom(double pixSizePhys,const std::string filename,double profPixSizePhys,double incl,double orient);
     void generateValues(){};
-    double getHalfRadius(){
-      // Need to implement the half-ligh radius here
-      return 0.0;
-    };
-    //private:
-    //void newInterpolateProfile(int Nxx,int Nyy,double* input,double profPixSizePhys);
-    //void interpolateProfile(int Nxx,int Nyy,double* input,double profPixSizePhys);
-    //void binProfile(int Nxx,int Nyy,double* input,double profPixSizePhys);
+    double getHalfRadius();
+  private:
+    std::vector<std::size_t> sort_permutation(const std::vector<double>& vec);
+    std::vector<double> apply_permutation(const std::vector<double>& vec,const std::vector<std::size_t>& p);
   };
 
 
@@ -135,7 +131,7 @@ namespace gerlumph {
       } else if( input["shape"] == "exponential" ){
 	return new Exponential(std::stof(input["pixSizePhys"]),std::stof(input["sigma"]),std::stof(input["incl"]),std::stof(input["orient"]));      
       } else if( input["shape"] == "custom" ){
-	return new Custom(std::stof(input["pixSizePhys"]),input["filename"],std::stof(input["profPixSizePhys"]),std::stof(input["incl"]),std::stof(input["orient"]));      
+	return new Custom(std::stof(input["pixSizePhys"]),input["filename"],std::stof(input["profPixSizePhys"]),std::stof(input["incl"]),std::stof(input["orient"]));
       } else {
 	return NULL;
       }

@@ -32,6 +32,7 @@ BaseProfile::BaseProfile(const BaseProfile& other){
 double BaseProfile::getSize(std::map<std::string,std::string> pars,double lrest){
   // If the temperature profile is parameteric or SS then calculate the half-light radius.
   // If it is simply a vector of given half-light radii, then just lrest is the rhalf anyway.
+  // If it is a custom profile, then calculate the half-light radius numerically.
   double rhalf;
   if( pars["type"] == "parametric" ){
     double r0 = std::stof(pars["r0"]);
@@ -45,6 +46,8 @@ double BaseProfile::getSize(std::map<std::string,std::string> pars,double lrest)
     rhalf = BaseProfile::sizeSS(mbh,fedd,eta,lrest);
   } else if( pars["type"] == "vector" ){
     rhalf = lrest;
+  } else if( pars["type"] == "custom" ){
+    rhalf = 1.0;
   } else {
     rhalf = 0.0; // throw an exception
   }
@@ -415,4 +418,53 @@ Custom::Custom(double pixSizePhys,const std::string filename,double profPixSizeP
   }
   
   normalize();
+}
+
+double Custom::getHalfRadius(){
+  double center_x = this->width/2.0;
+  double center_y = this->height/2.0;
+
+  // Calculate the distance of each pixel from the center.
+  std::vector<double> radii(Nx*Ny);
+  std::vector<double> values(Nx*Ny);
+  for(int i=0;i<this->Ny;i++){
+    for(int j=0;j<this->Nx;j++){
+      radii[i*this->Nx+j] = hypot(i*this->pixSizePhys-center_y,j*this->pixSizePhys-center_x);
+      values[i*this->Nx+j] = this->data[i*this->Nx+j];
+    }
+  }
+  // Sort both distances and values by the distance.
+  auto p = sort_permutation(radii);
+  radii = apply_permutation(radii,p);
+  values = apply_permutation(values,p);
+
+  // Now we have a list of all the pixels ordered by distance from the center.
+  // Just go through the list and add the elements.
+  // The half-light radius will be at the index where the sum is equal to 0.5 (the profile is normalized in the constructor).
+  double sum = 0.0;
+  double rhalf = 3.3;
+  for(int i=0;i<this->Ny;i++){
+    for(int j=0;j<this->Nx;j++){
+      sum += values[i*Nx+j];
+      if( sum > 0.5 ){
+	rhalf = radii[i*Nx+j];
+	break;
+      }
+    }
+  }
+  
+  return rhalf;
+}
+
+std::vector<std::size_t> Custom::sort_permutation(const std::vector<double>& vec){
+  std::vector<std::size_t> p(vec.size());
+  std::iota(p.begin(), p.end(), 0);
+  std::sort(p.begin(), p.end(),[&](std::size_t i, std::size_t j){ return vec[i]<vec[j]; });
+  return p;
+}
+
+std::vector<double> Custom::apply_permutation(const std::vector<double>& vec,const std::vector<std::size_t>& p){
+  std::vector<double> sorted_vec(vec.size());
+  std::transform(p.begin(), p.end(), sorted_vec.begin(),[&](std::size_t i){ return vec[i]; });
+  return sorted_vec;
 }
