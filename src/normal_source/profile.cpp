@@ -457,7 +457,6 @@ double Custom::getHalfRadius(){
       break;
     }
   }
-  std::cout << "HELLO" << std::endl;
   return rhalf;
 }
 
