@@ -443,16 +443,21 @@ double Custom::getHalfRadius(){
   // The half-light radius will be at the index where the sum is equal to 0.5 (the profile is normalized in the constructor).
   double sum = 0.0;
   double rhalf = 3.3;
+  bool flag = false;
   for(int i=0;i<this->Ny;i++){
     for(int j=0;j<this->Nx;j++){
       sum += values[i*Nx+j];
       if( sum > 0.5 ){
 	rhalf = radii[i*Nx+j];
+	flag = true;
 	break;
       }
     }
+    if( flag ){
+      break;
+    }
   }
-  
+  std::cout << "HELLO" << std::endl;
   return rhalf;
 }
 
