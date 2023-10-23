@@ -20,8 +20,11 @@ namespace gerlumph {
     virtual void generateValues() = 0;
     virtual double getHalfRadius() = 0; // for each child profile
     static double getSize(std::map<std::string,std::string> pars,double lrest);
+    static double getSize(std::map<std::string,std::string> pars,std::vector<double> wavelength,std::vector<double> throughput);
     static double sizeParametric(double r0,double l0,double nu,double lrest);
+    static double sizeParametric(double r0,double l0,double nu,std::vector<double> wavelength,std::vector<double> throughput);
     static double sizeSS(double mbh,double fedd,double eta,double lrest);
+    static double sizeSS(double mbh,double fedd,double eta,std::vector<double> wavelength,std::vector<double> throughput);
   protected:
     void makeEven(int& N);
     void createGrid(double* x,double* y);

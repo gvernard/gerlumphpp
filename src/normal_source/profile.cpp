@@ -53,11 +53,49 @@ double BaseProfile::getSize(std::map<std::string,std::string> pars,double lrest)
   }
   return rhalf;
 }
+double BaseProfile::getSize(std::map<std::string,std::string> pars,std::vector<double> wavelength,std::vector<double> throughput){
+  // If the temperature profile is parameteric or SS then calculate the half-light radius.
+  // If it is simply a vector of given half-light radii, then just lrest is the rhalf anyway.
+  // If it is a custom profile, then calculate the half-light radius numerically.
+  double rhalf;
+  if( pars["type"] == "parametric" ){
+    double r0 = std::stof(pars["r0"]);
+    double l0 = std::stof(pars["l0"]);
+    double nu = std::stof(pars["nu"]);
+    rhalf = BaseProfile::sizeParametric(r0,l0,nu,wavelength,throughput);
+  } else if( pars["type"] == "ss_disc" ){
+    double mbh  = std::stof(pars["mbh"]);
+    double fedd = std::stof(pars["fedd"]);
+    double eta  = std::stof(pars["eta"]);
+    rhalf = BaseProfile::sizeSS(mbh,fedd,eta,wavelength,throughput);
+  } else if( pars["type"] == "vector" ){
+    rhalf = lrest;
+  } else if( pars["type"] == "custom" ){
+    rhalf = 1.0;
+  } else {
+    rhalf = 0.0; // throw an exception
+  }
+  return rhalf;
+}
+
 double BaseProfile::sizeParametric(double r0,double l0,double nu,double lrest){
   // r0 in [10^14 cm], l0 and lrest in [nm]
   double r = r0*pow(lrest/l0,nu);
   return r; // in [10^14 cm]
 }
+double BaseProfile::sizeParametric(double r0,double l0,double nu,std::vector<double> wavelength,std::vector<double> throughput){
+  // r0 in [10^14 cm], l0 and lrest in [nm]
+  double reff = 0.0;
+  double norm = 0.0;
+  for(int i=1;i<wavelength.size();i++){
+    double norm += (wavelength[i] - wavelength[i-1])*(throughput[i] + throughput[i-1])/2.0;
+    double rhalf1 = r0*pow(wavelength[i-1]/l0,nu);
+    double rhalf2 = r0*pow(wavelength[i]/l0,nu);
+    double reff += (wavelength[i] - wavelength[i-1])*(throughput[i-1]*rhalf1 + throughput[i]*rhalf2)/2.0;
+  }
+  return reff/norm; // in [10^14 cm]
+}
+
 double BaseProfile::sizeSS(double mbh,double fedd,double eta,double lrest){
   double a = pow(lrest,4.0);
   double b = pow(mbh,2.0);
@@ -65,6 +103,21 @@ double BaseProfile::sizeSS(double mbh,double fedd,double eta,double lrest){
   double r = 0.0097*pow(a*b*c,1.0/3.0); // in [10^14 cm]
   return r;
 }
+double BaseProfile::sizeSS(double mbh,double fedd,double eta,std::vector<double> wavelength,std::vector<double> throughput){
+  double b = pow(mbh,2.0);
+  double c = fedd/eta;
+
+  double reff = 0.0;
+  double norm = 0.0;
+  for(int i=1;i<wavelength.size();i++){
+    double norm += (wavelength[i] - wavelength[i-1])*(throughput[i] + throughput[i-1])/2.0;
+    double rhalf1 = 0.0097*pow(pow(wavelength[i-1],4.0)*b*c,1.0/3.0);
+    double rhalf2 = 0.0097*pow(pow(wavelength[i],4.0)*b*c,1.0/3.0);
+    double reff += (wavelength[i] - wavelength[i-1])*(throughput[i-1]*rhalf1 + throughput[i]*rhalf2)/2.0;
+  }
+  return reff/norm; // in [10^14 cm]
+}
+
 void BaseProfile::project(int N,double* x,double* y){
   double fac = M_PI/180.0; // degrees to radians conversion
   double costheta = cos(fac*this->incl); // cos(incl)
