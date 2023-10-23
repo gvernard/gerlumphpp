@@ -69,7 +69,13 @@ double BaseProfile::getSize(std::map<std::string,std::string> pars,std::vector<d
     double eta  = std::stof(pars["eta"]);
     rhalf = BaseProfile::sizeSS(mbh,fedd,eta,wavelength,throughput);
   } else if( pars["type"] == "vector" ){
-    rhalf = lrest;
+    double leff = 0.0;
+    double norm = 0.0;
+    for(int i=1;i<wavelength.size();i++){
+      double norm += (wavelength[i] - wavelength[i-1])*(throughput[i] + throughput[i-1])/2.0;
+      double leff += (wavelength[i] - wavelength[i-1])*(throughput[i]*wavelength[i] + throughput[i-1]*wavelength[i-1])/2.0;
+    }
+    rhalf = leff/norm;
   } else if( pars["type"] == "custom" ){
     rhalf = 1.0;
   } else {
