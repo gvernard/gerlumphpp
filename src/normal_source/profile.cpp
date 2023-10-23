@@ -72,8 +72,8 @@ double BaseProfile::getSize(std::map<std::string,std::string> pars,std::vector<d
     double leff = 0.0;
     double norm = 0.0;
     for(int i=1;i<wavelength.size();i++){
-      double norm += (wavelength[i] - wavelength[i-1])*(throughput[i] + throughput[i-1])/2.0;
-      double leff += (wavelength[i] - wavelength[i-1])*(throughput[i]*wavelength[i] + throughput[i-1]*wavelength[i-1])/2.0;
+      norm += (wavelength[i] - wavelength[i-1])*(throughput[i] + throughput[i-1])/2.0;
+      leff += (wavelength[i] - wavelength[i-1])*(throughput[i]*wavelength[i] + throughput[i-1]*wavelength[i-1])/2.0;
     }
     rhalf = leff/norm;
   } else if( pars["type"] == "custom" ){
@@ -94,10 +94,10 @@ double BaseProfile::sizeParametric(double r0,double l0,double nu,std::vector<dou
   double reff = 0.0;
   double norm = 0.0;
   for(int i=1;i<wavelength.size();i++){
-    double norm += (wavelength[i] - wavelength[i-1])*(throughput[i] + throughput[i-1])/2.0;
+    norm += (wavelength[i] - wavelength[i-1])*(throughput[i] + throughput[i-1])/2.0;
     double rhalf1 = r0*pow(wavelength[i-1]/l0,nu);
     double rhalf2 = r0*pow(wavelength[i]/l0,nu);
-    double reff += (wavelength[i] - wavelength[i-1])*(throughput[i-1]*rhalf1 + throughput[i]*rhalf2)/2.0;
+    reff += (wavelength[i] - wavelength[i-1])*(throughput[i-1]*rhalf1 + throughput[i]*rhalf2)/2.0;
   }
   return reff/norm; // in [10^14 cm]
 }
@@ -116,10 +116,10 @@ double BaseProfile::sizeSS(double mbh,double fedd,double eta,std::vector<double>
   double reff = 0.0;
   double norm = 0.0;
   for(int i=1;i<wavelength.size();i++){
-    double norm += (wavelength[i] - wavelength[i-1])*(throughput[i] + throughput[i-1])/2.0;
+    norm += (wavelength[i] - wavelength[i-1])*(throughput[i] + throughput[i-1])/2.0;
     double rhalf1 = 0.0097*pow(pow(wavelength[i-1],4.0)*b*c,1.0/3.0);
     double rhalf2 = 0.0097*pow(pow(wavelength[i],4.0)*b*c,1.0/3.0);
-    double reff += (wavelength[i] - wavelength[i-1])*(throughput[i-1]*rhalf1 + throughput[i]*rhalf2)/2.0;
+    reff += (wavelength[i] - wavelength[i-1])*(throughput[i-1]*rhalf1 + throughput[i]*rhalf2)/2.0;
   }
   return reff/norm; // in [10^14 cm]
 }
