@@ -49,7 +49,7 @@ int main(int argc,char* argv[]){
 
   std::cout << "Read in a map" << std::endl;
   MagnificationMap amap(map_id,Rein);
-  MagnificationMap bmap("/home/giorgos/myData/","dum_map",Rein);
+  //MagnificationMap bmap("/home/giorgos/myData/","dum_map",Rein);
 
   std::cout << "Write map images" << std::endl;
   amap.writeImagePNG("sampled_map.png",10);
