@@ -1,19 +1,43 @@
 #include "magnification_map.hpp"
 
+#include <filesystem>
+
 using namespace gerlumph;
 
 MagnificationMap::MagnificationMap():path(MAP_PATH) {
   // do nothing. Just used to define the path.
 }
 
-MagnificationMap::MagnificationMap(std::string id,double Rein):path(MAP_PATH) {
-  this->id = id;
+MagnificationMap::MagnificationMap(std::string file_path,std::string file_name,double Rein):path(file_path),id(file_name) {
+  std::string full_path = this->path + this->id;
+  if( !std::filesystem::exists(full_path+"/map.bin") ){
+    throw std::runtime_error("Map file not found at: "+full_path);
+  }
+  if( !std::filesystem::exists(full_path+"/mapmeta.dat") ){
+    throw std::runtime_error("Mapmeta.dat file not found at: "+full_path);
+  }
+  this->read_map(Rein);
+}
+
+MagnificationMap::MagnificationMap(std::string id,double Rein):path(MAP_PATH),id(id) {
+  std::string full_path = this->path + this->id;
+  if( !std::filesystem::exists(full_path+"/map.bin") ){
+    throw std::runtime_error("Map file not found at: "+full_path);
+  }
+  if( !std::filesystem::exists(full_path+"/mapmeta.dat") ){
+    throw std::runtime_error("Mapmeta.dat file not found at: "+full_path);
+  }
+  this->read_map(Rein);
+}
+
+void MagnificationMap::read_map(double Rein){
+  std::string full_path = this->path + this->id;
   this->imageType = "map";
   this->convolved = false;
   std::string file;
 
   // Read map metadata
-  file = this->path + this->id + "/mapmeta.dat";
+  file = full_path + "/mapmeta.dat";
   std::ifstream myfile(file.c_str());
   myfile >> this->avgmu >> this->avgN;
   myfile >> this->Nx;
@@ -26,7 +50,7 @@ MagnificationMap::MagnificationMap(std::string id,double Rein):path(MAP_PATH) {
   this->mu_th = 1.0/(pow(1.0-this->k,2)-pow(this->g,2));
 
   // Read map data
-  file = this->path + this->id + "/map.bin";
+  file = full_path + "/map.bin";
   FILE* ptr_myfile = fopen(file.data(),"rb");
   int* imap = (int*) calloc(this->Nx*this->Ny,sizeof(int));
   size_t dum = fread(imap,sizeof(int),this->Nx*this->Ny,ptr_myfile);

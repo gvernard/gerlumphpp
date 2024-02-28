@@ -49,6 +49,7 @@ int main(int argc,char* argv[]){
 
   std::cout << "Read in a map" << std::endl;
   MagnificationMap amap(map_id,Rein);
+  MagnificationMap bmap("/home/giorgos/myData/","dum_map",Rein);
 
   std::cout << "Write map images" << std::endl;
   amap.writeImagePNG("sampled_map.png",10);
@@ -65,6 +66,7 @@ int main(int argc,char* argv[]){
 
   std::cout << "Create a profile and write its image" << std::endl;
   Gaussian aprofile(amap.pixSizePhys,gauss_size,gauss_incl,gauss_orient);
+  //UniformDisc aprofoile(amap.pixSizePhys,disc_size,disc_incl,dic_orient);
   aprofile.writeImagePNG("gaussian.png",1);
   aprofile.writeImageFITS("gaussian.fits",1);
 

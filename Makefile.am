@@ -59,4 +59,4 @@ endif
 
 # MAP PATH
 libmagmap_la_SOURCES = src/magmap/magnification_map.cpp
-libmagmap_la_CPPFLAGS = -std=c++11 -fPIC -g -frounding-math -DMAP_PATH='"@MAP_PATH@"'
+libmagmap_la_CPPFLAGS = -std=c++17 -fPIC -g -frounding-math -DMAP_PATH='"@MAP_PATH@"'

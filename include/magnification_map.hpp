@@ -46,8 +46,10 @@ namespace gerlumph {
 
     MagnificationMap();
     MagnificationMap(std::string id,double Rein);
+    MagnificationMap(std::string file_path,std::string file_name,double Rein);
     MagnificationMap(const MagnificationMap& other);
 
+    void read_map(double Rein);
     static double getPixSizePhys(std::string id,double Rein);
     Mpd getFullMpd();
     Mpd getBinnedMpd(int Nbins);

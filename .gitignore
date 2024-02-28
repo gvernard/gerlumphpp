@@ -2,6 +2,9 @@ lib
 *.png
 *.fits
 tests/example
+tests/*.png
+tests/*.fits
+tests/*.dat
 configure_command.txt
 
 libtool
